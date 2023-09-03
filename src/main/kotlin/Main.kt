@@ -4,26 +4,32 @@ import java.io.FileWriter
 import java.io.InputStreamReader
 
 fun main() {
-    val generatedCode = """
+    generateCode()
+    if (createAndExecuteJar("generatedOutput", "GeneratedCode.kt"))
+        println(">>> Jar successfully executed!")
+    else {
+        println(">>> Jar execution failed!")
+    }
+}
+
+fun generateCode() {
+    val code = """
         fun main() {
             println("Hello, World!")
         }
     """.trimIndent()
 
+    val outputFile = File("generatedOutput/GeneratedCode.kt")
+    FileWriter(outputFile).use { it.write(code) }
 
-    if (generateCode(generatedCode)) {
-        println(">>> Code successfully generated!")
-    } else {
-        println(">>> Code generation failed!")
-    }
+    println("Code successfully generated!")
 }
 
-private fun generateCode(code: String): Boolean {
-    val outputDir = File("generatedOutput")
+private fun createAndExecuteJar(pathName: String, child: String): Boolean {
+    val outputDir = File(pathName)
     outputDir.mkdir()
 
-    val codeFile = File(outputDir, "GeneratedCode.kt")
-    FileWriter(codeFile).use { it.write(code) }
+    val codeFile = File(outputDir, child)
 
     val processBuilder = ProcessBuilder("kotlinc", "-include-runtime", "-d", "GeneratedCode.jar", codeFile.absolutePath)
     val process = processBuilder.start()
@@ -36,7 +42,7 @@ private fun generateCode(code: String): Boolean {
         val inputStream = execProcess.inputStream
         val reader = BufferedReader(InputStreamReader(inputStream))
 
-        var line: String? = reader.readLine()
+        var line = reader.readLine()
         while (line != null) {
             println(line)
             line = reader.readLine()
@@ -47,6 +53,5 @@ private fun generateCode(code: String): Boolean {
         println("Kotlin Compilation Failed")
         return false
     }
-
     return true
 }
