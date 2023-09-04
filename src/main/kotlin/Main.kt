@@ -1,28 +1,41 @@
+import HelperFunctions.addIndentation
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 fun main() {
+    val startTime = System.currentTimeMillis()
+
     generateCode()
     if (createAndExecuteJar("generatedOutput", "GeneratedCode.kt"))
-        println(">>> Jar successfully executed!")
+        logger.info { ">>> Jar successfully executed!" }
     else {
-        println(">>> Jar execution failed!")
+        logger.error { ">>> Jar execution failed!" }
     }
+
+    val endTime = System.currentTimeMillis()
+    val executionTime = endTime - startTime
+
+    logger.info { ">>> Ausführungszeit: $executionTime Millisekunden" }
 }
 
 fun generateCode() {
-    val code = "fun main() {\n"+
-            "\tprintln(\"Hello, World!\")\n"+
-            "\tState.values().forEach { println(it) }\n" +
-            "}\n\n"+
-            CodeGenerator().generateEnumClass()
+    val code = sequenceOf(
+        0 to "fun main() {",
+        4 to "println(\"Hello, World!\")",
+        4 to "State.values().forEach { println(it) }",
+        0 to "}\n",
+        0 to CodeGenerator().generateStateEnumClass()
+    ).map { it.addIndentation() }.joinToString(separator = "\n")
 
     val outputFile = File("generatedOutput/GeneratedCode.kt")
     FileWriter(outputFile).use { it.write(code) }
 
-    println("Code successfully generated!")
+    logger.info { "Code successfully generated!" }
 }
 
 private fun createAndExecuteJar(pathName: String, child: String): Boolean {
@@ -50,8 +63,8 @@ private fun createAndExecuteJar(pathName: String, child: String): Boolean {
 
         execProcess.waitFor()
     } else {
-        println("Kotlin Compilation Failed")
         return false
     }
+
     return true
 }

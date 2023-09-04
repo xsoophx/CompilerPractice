@@ -10,7 +10,7 @@ class CodeGeneratorTest {
     fun `should create correct state enum class`(keywords: Array<KeywordState>, expected: String) {
         assertEquals(
             expected = expected,
-            actual = CodeGenerator(keywords).generateEnumClass()
+            actual = CodeGenerator(keywords).generateStateEnumClass()
         )
     }
 
@@ -32,7 +32,8 @@ class CodeGeneratorTest {
                     DOUBLE,
                     I,
                     IN,
-                    INT
+                    INT,
+                    IDENTIFIER
                 }
                 """.trimIndent()
             ),
@@ -55,7 +56,8 @@ class CodeGeneratorTest {
                     E,
                     EL,
                     ELS,
-                    ELSE
+                    ELSE,
+                    IDENTIFIER
                 }
                 """.trimIndent()
             ),
@@ -69,7 +71,8 @@ class CodeGeneratorTest {
                     BR,
                     BRE,
                     BREA,
-                    BREAK
+                    BREAK,
+                    IDENTIFIER
                 }
                 """.trimIndent()
             )
