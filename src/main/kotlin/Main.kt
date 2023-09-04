@@ -13,11 +13,11 @@ fun main() {
 }
 
 fun generateCode() {
-    val code = """
-        fun main() {
-            println("Hello, World!")
-        }
-    """.trimIndent()
+    val code = "fun main() {\n"+
+            "\tprintln(\"Hello, World!\")\n"+
+            "\tState.values().forEach { println(it) }\n" +
+            "}\n\n"+
+            CodeGenerator().generateEnumClass()
 
     val outputFile = File("generatedOutput/GeneratedCode.kt")
     FileWriter(outputFile).use { it.write(code) }
