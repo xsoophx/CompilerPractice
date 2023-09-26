@@ -1,3 +1,4 @@
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -7,18 +8,50 @@ class CodeGeneratorTest {
 
     @ParameterizedTest
     @MethodSource("statesByKeywords")
-    fun `should create correct state enum class`(keywords: Array<KeywordState>, expected: String) {
+    fun `should create correct state enum class`(keywords: Array<Keyword>, expected: String) {
         assertEquals(
             expected = expected,
             actual = CodeGenerator(keywords).generateStateEnumClass()
         )
     }
 
+    @Test
+    fun `should create correct start state`() {
+        val expected = """
+           'i' -> {
+                        currentState = State.I
+                        currentToken.append(char)
+                    }
+
+                    ';' -> {
+                        currentState = State.SEMICOLON
+                        currentToken.append(char)
+                    }
+
+                    '=' -> {
+                        currentState = State.ASSIGN
+                        currentToken.append(char)
+                    }
+
+                    in 'a'..'z', in 'A'..'Z' -> {
+                        currentState = State.IDENTIFIER
+                        currentToken.append(char)
+                    }
+
+                    in '0'..'9' -> {
+                        currentState = State.INT_LITERAL
+                        currentToken.append(char)
+                    }
+        """.trimIndent()
+
+        assertEquals(expected = expected, actual = CodeGenerator(arrayOf(Keyword.INT)).createStartStateCase())
+    }
+
     companion object {
         @JvmStatic
         fun statesByKeywords() = listOf(
             Arguments.of(
-                arrayOf(KeywordState.BOOL, KeywordState.DOUBLE, KeywordState.INT), """
+                arrayOf(Keyword.BOOL, Keyword.DOUBLE, Keyword.INT), """
                 enum class State {
                     B,
                     BO,
@@ -33,12 +66,16 @@ class CodeGeneratorTest {
                     I,
                     IN,
                     INT,
-                    IDENTIFIER
+                    ASSIGN,
+                    IDENTIFIER,
+                    INT_LITERAL,
+                    SEMICOLON,
+                    START
                 }
                 """.trimIndent()
             ),
             Arguments.of(
-                arrayOf(KeywordState.BREAK, KeywordState.CONTINUE, KeywordState.ELSE), """
+                arrayOf(Keyword.BREAK, Keyword.CONTINUE, Keyword.ELSE), """
                 enum class State {
                     B,
                     BR,
@@ -57,12 +94,16 @@ class CodeGeneratorTest {
                     EL,
                     ELS,
                     ELSE,
-                    IDENTIFIER
+                    ASSIGN,
+                    IDENTIFIER,
+                    INT_LITERAL,
+                    SEMICOLON,
+                    START
                 }
                 """.trimIndent()
             ),
             Arguments.of(
-                arrayOf(KeywordState.BOOL, KeywordState.BREAK), """
+                arrayOf(Keyword.BOOL, Keyword.BREAK), """
                 enum class State {
                     B,
                     BO,
@@ -72,7 +113,11 @@ class CodeGeneratorTest {
                     BRE,
                     BREA,
                     BREAK,
-                    IDENTIFIER
+                    ASSIGN,
+                    IDENTIFIER,
+                    INT_LITERAL,
+                    SEMICOLON,
+                    START
                 }
                 """.trimIndent()
             )

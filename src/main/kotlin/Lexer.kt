@@ -3,53 +3,63 @@ class Lexer {
     private var currentToken = StringBuilder()
 
     enum class State {
-        START,
+        ASSIGN,
         I,
+        IDENTIFIER,
+        IF,
         IN,
         INT,
         INT_LITERAL,
-        IDENTIFIER,
-        ASSIGN,
         SEMICOLON,
+        START,
     }
 
     private fun readStates(char: Char, tokens: MutableList<Token>) {
         when (currentState) {
             State.START -> {
-                if (char == 'i') {
-                    currentState = State.I
-                    currentToken.append(char)
-                } else if (char == '=') {
-                    currentState = State.ASSIGN
-                    currentToken.append(char)
-                } else if (char == ';') {
-                    currentState = State.SEMICOLON
-                    currentToken.append(char)
-                } else if (char.isLetter()) {
-                    currentState = State.IDENTIFIER
-                    currentToken.append(char)
-                } else if (char.isDigit()) {
-                    currentState = State.INT_LITERAL
-                    currentToken.append(char)
+                when (char) {
+                    'i' -> {
+                        currentState = State.I
+                        currentToken.append(char)
+                    }
+
+                    '=' -> {
+                        currentState = State.ASSIGN
+                        currentToken.append(char)
+                    }
+
+                    ';' -> {
+                        currentState = State.SEMICOLON
+                        currentToken.append(char)
+                    }
+
+                    in 'a'..'z', in 'A'..'Z' -> {
+                        currentState = State.IDENTIFIER
+                        currentToken.append(char)
+                    }
+
+                    in '0'..'9' -> {
+                        currentState = State.INT_LITERAL
+                        currentToken.append(char)
+                    }
                 }
             }
 
-            // keep for now to make it easier to auto-generate the code
             State.I -> {
-                if (char == 'n') {
-                    currentState = State.IN
-                } else {
-                    currentState = State.IDENTIFIER
+                currentState = when (char) {
+                    'n' -> State.IN
+                    'f' -> State.IF
+                    else -> State.IDENTIFIER
                 }
                 currentToken.append(char)
             }
 
             State.IN -> {
-                if (char == 't') {
-                    currentState = State.INT
-                } else {
-                    currentState = State.IDENTIFIER
+                currentState = when (char) {
+                    't' -> State.INT
+                    else -> State.IDENTIFIER
                 }
+
                 currentToken.append(char)
             }
 
@@ -95,6 +105,17 @@ class Lexer {
                     readStates(char, tokens)
                 }
             }
+
+            State.IF -> {
+                if (char.isLetterOrDigit()) {
+                    currentToken.append(char)
+                    currentState = State.IDENTIFIER
+                } else {
+                    tokens.add(Token(TokenType.IF, currentToken.toString()))
+                    setStartState()
+                    readStates(char, tokens)
+                }
+            }
         }
     }
 
@@ -105,7 +126,6 @@ class Lexer {
 
     fun tokenize(input: String): List<Token> {
         val tokens = mutableListOf<Token>()
-
         for (char in input) {
             readStates(char, tokens)
         }
@@ -123,6 +143,6 @@ fun main() {
     val tokens = lexer.tokenize(input)
 
     for (token in tokens) {
-        println("Token Type: ${token.type}, Value: ${token.value}")
+        println(token)
     }
 }
