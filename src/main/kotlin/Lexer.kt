@@ -46,21 +46,11 @@ class Lexer {
             }
 
             State.I -> {
-                currentState = when (char) {
-                    'n' -> State.IN
-                    'f' -> State.IF
-                    else -> State.IDENTIFIER
-                }
-                currentToken.append(char)
+                checkAndChangeState(char, mapOf('n' to State.IN, 'f' to State.IF))
             }
 
             State.IN -> {
-                currentState = when (char) {
-                    't' -> State.INT
-                    else -> State.IDENTIFIER
-                }
-
-                currentToken.append(char)
+                checkAndChangeState(char, mapOf('t' to State.INT))
             }
 
             State.INT -> {
@@ -117,6 +107,11 @@ class Lexer {
                 }
             }
         }
+    }
+
+    private fun checkAndChangeState(char: Char, states: Map<Char, State>) {
+        currentState = states[char] ?: State.IDENTIFIER
+        currentToken.append(char)
     }
 
     private fun setStartState() {

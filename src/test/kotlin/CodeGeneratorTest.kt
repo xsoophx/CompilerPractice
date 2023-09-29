@@ -17,32 +17,13 @@ class CodeGeneratorTest {
 
     @Test
     fun `should create correct start state`() {
-        val expected = """
-           'i' -> {
-                        currentState = State.I
-                        currentToken.append(char)
-                    }
-
-                    ';' -> {
-                        currentState = State.SEMICOLON
-                        currentToken.append(char)
-                    }
-
-                    '=' -> {
-                        currentState = State.ASSIGN
-                        currentToken.append(char)
-                    }
-
-                    in 'a'..'z', in 'A'..'Z' -> {
-                        currentState = State.IDENTIFIER
-                        currentToken.append(char)
-                    }
-
-                    in '0'..'9' -> {
-                        currentState = State.INT_LITERAL
-                        currentToken.append(char)
-                    }
-        """.trimIndent()
+        val expected = listOf(
+            StartStateCondition(CharIfCondition('i'), "I"),
+            StartStateCondition(CharIfCondition(';'), "SEMICOLON"),
+            StartStateCondition(CharIfCondition('='), "ASSIGN"),
+            StartStateCondition(StringIfCondition("in 'a'..'z', in 'A'..'Z'"), "IDENTIFIER"),
+            StartStateCondition(StringIfCondition("in '0'..'9'"), "INT_LITERAL"),
+        )
 
         assertEquals(expected = expected, actual = CodeGenerator(arrayOf(Keyword.INT)).createStartStateCase())
     }

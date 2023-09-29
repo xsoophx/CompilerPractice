@@ -1,7 +1,9 @@
 import HelperFunctions.addIndentation
 import java.util.Locale
 
-class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
+const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
+
+class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
 
     private val states = keywords.flatMap(Keyword::splitKeywordToStates).distinct().sorted()
 
@@ -33,14 +35,14 @@ class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
             0 to "private var currentToken = StringBuilder()",
             0 to "fun readStates(char: Char, tokens: MutableList<Token>) {",
             4 to " when (currentState) {",
-            8 to createStartStateCase(),
+            8 to createStartStateCase().asString(),
             0 to "}",
         )
 
         return codeLines.map { it.addIndentation() }.joinToString(separator = "\n")
     }
 
-    fun createStartStateCase(): String {
+    fun createStartStateCase(): List<StartStateCondition> {
         val singleCharStates =
             states.filter { it.length == 1 }
                 .sorted()
@@ -56,7 +58,11 @@ class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
             (singleCharStates + nonSplittableStates).map { (condition, state) ->
                 StartStateCondition(condition, state)
             }
-        return startStateConditions.joinToString(separator = "\n")
+        return startStateConditions
+    }
+
+    fun List<StartStateCondition>.asString(): String {
+        return joinToString(separator = "\n")
     }
 }
 
