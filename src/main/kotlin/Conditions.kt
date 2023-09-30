@@ -1,16 +1,22 @@
 import HelperFunctions.addIndentation
 
 data class StartStateCondition(val condition: StateIfCondition, val nextState: String) : StateMachineCondition {
-    override fun toString(): String {
+    fun getIfClauseAsSequence(): Sequence<Pair<Int, String>> {
         val ifClause = when (condition) {
             is CharIfCondition -> "'${condition.char}'"
             is StringIfCondition -> condition.string
             else -> throw IllegalArgumentException("Unknown condition type")
         }
-        return "$ifClause -> {\n" +
-                "    currentState = State.$nextState\n" +
-                "    currentToken.append(char)\n" +
-                "}\n"
+        return sequenceOf(
+            0 to "$ifClause -> {",
+            4 to "currentState = State.$nextState",
+            4 to "currentToken.append(char)",
+            0 to "}"
+        )
+    }
+
+    override fun toString(): String {
+        return getIfClauseAsSequence().map { it.addIndentation() }.joinToString("\n")
     }
 }
 
@@ -38,8 +44,8 @@ data class StateCondition(val currentState: String, val possibleFollowStates: Ma
     }
 
     private fun createStateMap(): String {
-       return possibleFollowStates.map { (char, state) ->
-                "'$char' to State.$state"
-            }.joinToString(separator = ", ")
+        return possibleFollowStates.map { (char, state) ->
+            "'$char' to State.$state"
+        }.joinToString(separator = ", ")
     }
 }

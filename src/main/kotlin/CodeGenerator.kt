@@ -7,11 +7,20 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
 
     private val states = keywords.flatMap(Keyword::splitKeywordToStates).distinct().sorted()
 
+    fun generate(): String {
+        val codeLines = sequenceOf(
+            0 to generateStateEnumClass(),
+            0 to generateStateAndToken(),
+            0 to generateStateMachine()
+        )
+        return codeLines.map { it.addIndentation() }.joinToString(separator = "\n")
+    }
+
     fun generateStateEnumClass(): String {
         val codeLines = sequenceOf(
             0 to "enum class State {",
             0 to generateEnumEntries(),
-            0 to "}"
+            0 to "}\n"
         )
         return codeLines.map { it.addIndentation() }.joinToString(separator = "\n")
     }
@@ -29,13 +38,19 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         return states.joinToString(separator = ",\n    ") { it.uppercase(Locale.getDefault()) }
     }
 
+    private fun generateStateAndToken(): String {
+        return sequenceOf(
+            0 to "private var currentState = State.START",
+            0 to "private var currentToken = StringBuilder()\n"
+        ).map { it.addIndentation() }.joinToString(separator = "\n")
+    }
+
     fun generateStateMachine(): String {
         val codeLines = sequenceOf(
-            0 to "private var currentState = State.START",
-            0 to "private var currentToken = StringBuilder()",
             0 to "fun readStates(char: Char, tokens: MutableList<Token>) {",
-            4 to " when (currentState) {",
-            8 to createStartStateCase().asString(),
+            4 to "when (currentState) {",
+            0 to createStartStateCase().asString(),
+            4 to "}",
             0 to "}",
         )
 
@@ -61,8 +76,13 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         return startStateConditions
     }
 
-    fun List<StartStateCondition>.asString(): String {
-        return joinToString(separator = "\n")
+    private fun List<StartStateCondition>.asString(): String {
+        return joinToString(separator = "\n") { startStateCondition ->
+            startStateCondition.getIfClauseAsSequence()
+                .map { it.first + 8 to it.second }
+                .map { it.addIndentation() }
+                .joinToString(separator = "\n")
+        }
     }
 }
 

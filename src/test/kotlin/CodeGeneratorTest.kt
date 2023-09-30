@@ -16,7 +16,7 @@ class CodeGeneratorTest {
     }
 
     @Test
-    fun `should create correct start state`() {
+    fun `should create correct start states`() {
         val expected = listOf(
             StartStateCondition(CharIfCondition('i'), "I"),
             StartStateCondition(CharIfCondition(';'), "SEMICOLON"),
@@ -26,6 +26,12 @@ class CodeGeneratorTest {
         )
 
         assertEquals(expected = expected, actual = CodeGenerator(arrayOf(Keyword.INT)).createStartStateCase())
+    }
+
+    @Test
+    fun `should create correct code`() {
+        assertEquals("", CodeGenerator().generate())
+
     }
 
     companion object {
