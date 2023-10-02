@@ -1,7 +1,7 @@
-import HelperFunctions.addIndentation
 import java.util.Locale
 
 const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
+const val STANDARD_INDENTATION = 4
 
 class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
 
@@ -45,16 +45,15 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         ).map { it.addIndentation() }.joinToString(separator = "\n")
     }
 
-    fun generateStateMachine(): String {
-        val codeLines = sequenceOf(
-            0 to "fun readStates(char: Char, tokens: MutableList<Token>) {",
-            4 to "when (currentState) {",
-            0 to createStartStateCase().asString(),
-            4 to "}",
-            0 to "}",
+    fun generateStateMachine(baseIndentation: Int = 0): String {
+        val preCode = sequenceOf(
+            "fun readStates(char: Char, tokens: MutableList<Token>) {",
+            "when (currentState) {"
         )
+        val code = createStartStateCase().map(StartStateCondition::getClauseAsCodeBlock).asSequence()
 
-        return codeLines.map { it.addIndentation() }.joinToString(separator = "\n")
+        val codeLines = Codeblock(preCode, code, "}")
+        return codeLines.toString(indentation = 0)
     }
 
     fun createStartStateCase(): List<StartStateCondition> {
@@ -76,14 +75,6 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         return startStateConditions
     }
 
-    private fun List<StartStateCondition>.asString(): String {
-        return joinToString(separator = "\n") { startStateCondition ->
-            startStateCondition.getIfClauseAsSequence()
-                .map { it.first + 8 to it.second }
-                .map { it.addIndentation() }
-                .joinToString(separator = "\n")
-        }
-    }
 }
 
 enum class NonSplittableStates(val condition: StateIfCondition?, val hasToBeLast: Boolean = false) {
@@ -93,4 +84,3 @@ enum class NonSplittableStates(val condition: StateIfCondition?, val hasToBeLast
     ASSIGN(CharIfCondition('=')),
     START(null);
 }
-

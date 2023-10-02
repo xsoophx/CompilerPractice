@@ -1,22 +1,38 @@
-import HelperFunctions.addIndentation
-
 data class StartStateCondition(val condition: StateIfCondition, val nextState: String) : StateMachineCondition {
-    fun getIfClauseAsSequence(): Sequence<Pair<Int, String>> {
+    private fun getIfClause(): String {
         val ifClause = when (condition) {
             is CharIfCondition -> "'${condition.char}'"
             is StringIfCondition -> condition.string
             else -> throw IllegalArgumentException("Unknown condition type")
         }
+        return "$ifClause -> {"
+    }
+
+    fun getIfClauseAsSequence(): Sequence<String> {
         return sequenceOf(
-            0 to "$ifClause -> {",
-            4 to "currentState = State.$nextState",
-            4 to "currentToken.append(char)",
-            0 to "}"
+            "${getIfClause()} -> {",
+            "currentState = State.$nextState",
+            "currentToken.append(char)",
+            "}"
+        )
+    }
+
+    fun getClauseAsCodeBlock(): Codeblock {
+        return Codeblock(
+            "${getIfClause()} -> {",
+            Codeblock(
+                preCode =
+                sequenceOf(
+                    "currentState = State.$nextState",
+                    "currentToken.append(char)"
+                )
+            ),
+            "}",
         )
     }
 
     override fun toString(): String {
-        return getIfClauseAsSequence().map { it.addIndentation() }.joinToString("\n")
+        return getIfClauseAsSequence().joinToString("\n")
     }
 }
 
