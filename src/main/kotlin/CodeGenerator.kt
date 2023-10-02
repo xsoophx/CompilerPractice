@@ -48,12 +48,12 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
     fun generateStateMachine(baseIndentation: Int = 0): String {
         val preCode = sequenceOf(
             "fun readStates(char: Char, tokens: MutableList<Token>) {",
-            "when (currentState) {"
+            "when (currentState)"
         )
         val code = createStartStateCase().map(StartStateCondition::getClauseAsCodeBlock).asSequence()
 
-        val codeLines = Codeblock(preCode, code, "}")
-        return codeLines.asString(indentation = 0)
+        val codeLines = Codeblock(preCode, code)
+        return codeLines.asString(indentation = baseIndentation)
     }
 
     fun createStartStateCase(): List<StartStateCondition> {

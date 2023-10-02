@@ -5,29 +5,27 @@ data class StartStateCondition(val condition: StateIfCondition, val nextState: S
             is StringIfCondition -> condition.string
             else -> throw IllegalArgumentException("Unknown condition type")
         }
-        return "$ifClause -> {"
+        return "$ifClause -> "
     }
 
-    fun getIfClauseAsSequence(): Sequence<String> {
+    private fun getIfClauseAsSequence(): Sequence<String> {
         return sequenceOf(
-            "${getIfClause()} -> {",
+            getIfClause(),
             "currentState = State.$nextState",
             "currentToken.append(char)",
-            "}"
         )
     }
 
     fun getClauseAsCodeBlock(): Codeblock {
         return Codeblock(
-            "${getIfClause()} -> {",
+            getIfClause(),
             Codeblock(
                 preCode =
                 sequenceOf(
                     "currentState = State.$nextState",
                     "currentToken.append(char)"
                 )
-            ),
-            "}",
+            )
         )
     }
 
@@ -51,9 +49,8 @@ data class StateCondition(val currentState: String, val possibleFollowStates: Ma
     StateMachineCondition {
     override fun toString(): String {
         val stateCases = sequenceOf(
-            0 to "State.$currentState -> {",
+            0 to "State.$currentState -> ",
             4 to "$CHECK_AND_CHANGE_FUNCTION_NAME(char, mapOf(${createStateMap()}))",
-            0 to "}"
         )
 
         return stateCases.map { it.addIndentation() }.joinToString(separator = "\n")
