@@ -4,5 +4,12 @@ fun Pair<Int, String>.addIndentation(): String {
 
 fun String.addIndentation(indentation: Int): String {
     return this.let { " ".repeat(indentation) + it }
+}
 
+fun Sequence<String>.addIndentation(indentation: Int): String {
+    return map { it.addIndentation(indentation) }.joinToString(separator = "\n")
+}
+
+fun List<String>.addIndentation(indentation: Int): String {
+    return joinToString(separator = "\n") { it.addIndentation(indentation) }
 }

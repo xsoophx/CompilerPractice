@@ -53,7 +53,7 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         val code = createStartStateCase().map(StartStateCondition::getClauseAsCodeBlock).asSequence()
 
         val codeLines = Codeblock(preCode, code, "}")
-        return codeLines.toString(indentation = 0)
+        return codeLines.asString(indentation = 0)
     }
 
     fun createStartStateCase(): List<StartStateCondition> {
