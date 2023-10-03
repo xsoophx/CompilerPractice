@@ -61,11 +61,12 @@ data class Codeblock(
         val indentedCode = codeLines.map { it.asString(indentation + STANDARD_INDENTATION) }
         val (preCodeAsList, postCodeAsList) = addBrackets()
 
-        return (preCodeAsList.addIndentation(indentation) +
-                NEW_LINE +
-                indentedCode.joinToString(NEW_LINE) +
-                NEW_LINE +
-                postCodeAsList.addIndentation(indentation))
+        return (preCodeAsList.addIndentation(indentation)
+                + NEW_LINE
+                + indentedCode.joinToString(NEW_LINE)
+                + NEW_LINE
+                + postCodeAsList.addIndentation(indentation))
+
     }
 
     private fun addBrackets(): Pair<List<String>, List<String>> {
