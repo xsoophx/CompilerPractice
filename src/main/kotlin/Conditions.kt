@@ -5,27 +5,15 @@ data class StartStateCondition(val condition: StateIfCondition, val nextState: S
             is StringIfCondition -> condition.string
             else -> throw IllegalArgumentException("Unknown condition type")
         }
-        return "$ifClause -> "
+        return "$ifClause -> {"
     }
 
-    private fun getIfClauseAsSequence(): Sequence<String> {
+     private fun getIfClauseAsSequence(): Sequence<String> {
         return sequenceOf(
             getIfClause(),
             "currentState = State.$nextState",
             "currentToken.append(char)",
-        )
-    }
-
-    fun getClauseAsCodeBlock(): Codeblock {
-        return Codeblock(
-            getIfClause(),
-            Codeblock(
-                preCode =
-                sequenceOf(
-                    "currentState = State.$nextState",
-                    "currentToken.append(char)"
-                )
-            )
+            "}"
         )
     }
 

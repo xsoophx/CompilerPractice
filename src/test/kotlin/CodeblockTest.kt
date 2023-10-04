@@ -7,12 +7,6 @@ import org.junit.jupiter.params.provider.MethodSource
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CodeblockTest {
-    @ParameterizedTest
-    @MethodSource("getCodeFragments")
-    fun `should generate correct indentations`(code: Codeblock, expected: String) {
-        assertEquals(expected = expected, actual = code.asString())
-    }
-
 
     companion object {
         private const val codeClass = "class Test"

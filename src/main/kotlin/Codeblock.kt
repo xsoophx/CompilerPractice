@@ -54,21 +54,6 @@ data class Codeblock(
         postCode = postCode
     )
 
-    fun asString(indentation: Int = 0): String {
-        if (codeLines.count() == 0) {
-            return (preCode + postCode).addIndentation(indentation)
-        }
-        val indentedCode = codeLines.map { it.asString(indentation + STANDARD_INDENTATION) }
-        val (preCodeAsList, postCodeAsList) = addBrackets()
-
-        return (preCodeAsList.addIndentation(indentation)
-                + NEW_LINE
-                + indentedCode.joinToString(NEW_LINE)
-                + NEW_LINE
-                + postCodeAsList.addIndentation(indentation))
-
-    }
-
     private fun addBrackets(): Pair<List<String>, List<String>> {
         val preCodeAsList = preCode.toMutableList().let {
             if (it.isNotEmpty()) {
@@ -83,9 +68,5 @@ data class Codeblock(
         }
 
         return preCodeAsList.toList() to postCodeAsList.toList()
-    }
-
-    companion object {
-        const val NEW_LINE = "\n"
     }
 }

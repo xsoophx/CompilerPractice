@@ -8,52 +8,44 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
     private val states = keywords.flatMap(Keyword::splitKeywordToStates).distinct().sorted()
 
     fun generate(): String {
-        val codeLines = sequenceOf(
-            0 to generateStateEnumClass(),
-            0 to generateStateAndToken(),
-            0 to generateStateMachine()
-        )
-        return codeLines.map { it.addIndentation() }.joinToString(separator = "\n")
+        val codeLines = generateStateEnumClass() +
+                generateStateAndToken() +
+                generateStateMachine() +
+                sequenceOf("")
+
+        return indent(codeLines)
     }
 
-    fun generateStateEnumClass(): String {
-        val codeLines = sequenceOf(
-            0 to "enum class State {",
-            0 to generateEnumEntries(),
-            0 to "}\n"
-        )
-        return codeLines.map { it.addIndentation() }.joinToString(separator = "\n")
+    fun generateStateEnumClass(): Sequence<String> {
+        return sequenceOf("enum class State {") + generateEnumEntries() + sequenceOf("}", EMPTY_LINE)
     }
 
-    private fun generateEnumEntries(): String {
-        val entries =
-            sequenceOf(4 to getKeywordStatesAsString()) + NonSplittableStates.values()
-                .map { 4 to it.name.uppercase(Locale.getDefault()) }.sortedBy { it.second }
+    private fun generateEnumEntries(): Sequence<String> {
+        val states = getKeywordStatesAsString() + NonSplittableStates.values()
+            .map { it.name.uppercase(Locale.getDefault()) }.sorted()
 
-        return entries.map { it.addIndentation() }.joinToString(separator = ",\n")
+        return states.map { "$it," }
     }
 
-
-    private fun getKeywordStatesAsString(): String {
-        return states.joinToString(separator = ",\n    ") { it.uppercase(Locale.getDefault()) }
+    private fun getKeywordStatesAsString(): Sequence<String> {
+        return states.map { it.uppercase(Locale.getDefault()) }.asSequence()
     }
 
-    private fun generateStateAndToken(): String {
+    private fun generateStateAndToken(): Sequence<String> {
         return sequenceOf(
-            0 to "private var currentState = State.START",
-            0 to "private var currentToken = StringBuilder()\n"
-        ).map { it.addIndentation() }.joinToString(separator = "\n")
+            "private var currentState = State.START",
+            "private var currentToken = StringBuilder()\n"
+        )
     }
 
-    fun generateStateMachine(baseIndentation: Int = 0): String {
+    fun generateStateMachine(): Sequence<String> {
         val preCode = sequenceOf(
-            "fun readStates(char: Char, tokens: MutableList<Token>)"
+            "fun readStates(char: Char, tokens: MutableList<Token>) {",
+            "when (currentState) {"
         )
-        val code = createStartStateCase().map(StartStateCondition::getClauseAsCodeBlock).asSequence()
+        val code = createStartStateCase().map(StartStateCondition::toString).asSequence()
 
-        val whenCodeblock = Codeblock(preCode = sequenceOf("when (currentState)"), code)
-        val codeLines = Codeblock(preCode, sequenceOf(whenCodeblock))
-        return codeLines.asString(indentation = baseIndentation)
+        return preCode + code + sequenceOf("}", "}")
     }
 
     fun createStartStateCase(): List<StartStateCondition> {
@@ -75,6 +67,36 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         return startStateConditions
     }
 
+
+    fun indent(code: Sequence<String>, baseIndentation: Int = 0): String {
+        val codeLines = code.toMutableList()
+        var indentation = baseIndentation
+        codeLines.forEachIndexed { lineNumber, line ->
+            val reducedLine = line.trim()
+            if (reducedLine.isNotEmpty()) {
+                if ("}])".contains(reducedLine.first())) {
+                    codeLines[lineNumber] =
+                        " ".repeat((indentation - STANDARD_INDENTATION).coerceAtLeast(0)) + reducedLine
+                } else {
+                    codeLines[lineNumber] = " ".repeat(indentation.coerceAtLeast(0)) + reducedLine
+                }
+
+                reducedLine.forEach {
+
+                    if ("{([".contains(it)) {
+                        indentation += STANDARD_INDENTATION
+                    }
+                    if ("}])".contains(it)) {
+                        indentation -= STANDARD_INDENTATION
+                    }
+                }
+            } else {
+                codeLines[lineNumber] = EMPTY_LINE
+            }
+        }
+
+        return codeLines.joinToString(separator = "\n")
+    }
 }
 
 enum class NonSplittableStates(val condition: StateIfCondition?, val hasToBeLast: Boolean = false) {

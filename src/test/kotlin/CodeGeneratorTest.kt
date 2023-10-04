@@ -9,9 +9,12 @@ class CodeGeneratorTest {
     @ParameterizedTest
     @MethodSource("statesByKeywords")
     fun `should create correct state enum class`(keywords: Array<Keyword>, expected: String) {
+        val codeGenerator = CodeGenerator(keywords)
+        val enumClass = codeGenerator.generateStateEnumClass()
+
         assertEquals(
             expected = expected,
-            actual = CodeGenerator(keywords).generateStateEnumClass()
+            actual = codeGenerator.indent(enumClass)
         )
     }
 
@@ -31,7 +34,6 @@ class CodeGeneratorTest {
     @Test
     fun `should create correct code`() {
         assertEquals("", CodeGenerator().generate())
-
     }
 
     companion object {
@@ -57,8 +59,9 @@ class CodeGeneratorTest {
                     IDENTIFIER,
                     INT_LITERAL,
                     SEMICOLON,
-                    START
+                    START,
                 }
+                
                 """.trimIndent()
             ),
             Arguments.of(
@@ -85,8 +88,9 @@ class CodeGeneratorTest {
                     IDENTIFIER,
                     INT_LITERAL,
                     SEMICOLON,
-                    START
+                    START,
                 }
+                
                 """.trimIndent()
             ),
             Arguments.of(
@@ -104,8 +108,9 @@ class CodeGeneratorTest {
                     IDENTIFIER,
                     INT_LITERAL,
                     SEMICOLON,
-                    START
+                    START,
                 }
+                
                 """.trimIndent()
             )
         )
