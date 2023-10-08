@@ -5,7 +5,7 @@ fun Pair<Int, String>.addIndentation(): String {
 }
 
 fun String.addIndentation(indentation: Int): String {
-    return this.let { " ".repeat(indentation) + it }
+    return let { " ".repeat(indentation) + it }
 }
 
 fun Sequence<String>.addIndentation(indentation: Int): String {

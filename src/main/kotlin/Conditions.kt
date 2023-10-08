@@ -8,7 +8,7 @@ data class StartStateCondition(val condition: StateIfCondition, val nextState: S
         return "$ifClause -> {"
     }
 
-     private fun getIfClauseAsSequence(): Sequence<String> {
+    fun getIfClauseAsSequence(): Sequence<String> {
         return sequenceOf(
             getIfClause(),
             "currentState = State.$nextState",

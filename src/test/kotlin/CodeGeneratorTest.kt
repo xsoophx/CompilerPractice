@@ -1,4 +1,5 @@
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -28,12 +29,13 @@ class CodeGeneratorTest {
             StartStateCondition(StringIfCondition("in '0'..'9'"), "INT_LITERAL"),
         )
 
-        assertEquals(expected = expected, actual = CodeGenerator(arrayOf(Keyword.INT)).createStartStateCase())
+        assertEquals(expected = expected, actual = CodeGenerator(arrayOf(Keyword.INT)).createStartStateCases())
     }
 
     @Test
     fun `should create correct code`() {
-        assertEquals("", CodeGenerator().generate())
+        val code = CodeGenerator().generate()
+        assertContains(code, "xState.START")
     }
 
     companion object {

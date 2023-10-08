@@ -1,4 +1,5 @@
 import java.util.Locale
+import kotlin.math.max
 
 const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
 const val STANDARD_INDENTATION = 4
@@ -38,17 +39,26 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         )
     }
 
-    fun generateStateMachine(): Sequence<String> {
+    private fun generateStateMachine(): Sequence<String> {
         val preCode = sequenceOf(
             "fun readStates(char: Char, tokens: MutableList<Token>) {",
             "when (currentState) {"
         )
-        val code = createStartStateCase().map(StartStateCondition::toString).asSequence()
-
-        return preCode + code + sequenceOf("}", "}")
+        val startStateCases = createTopLevelStateCase()
+        return preCode + startStateCases + determineAndCreateClosingBrackets(preCode)
     }
 
-    fun createStartStateCase(): List<StartStateCondition> {
+    private fun createTopLevelStateCase(): Sequence<String> {
+        val preCode = sequenceOf(
+            "State.START -> {",
+            "when (char) {"
+        )
+
+        val startStateCases = createStartStateCases().flatMap(StartStateCondition::getIfClauseAsSequence).asSequence()
+        return preCode + startStateCases + determineAndCreateClosingBrackets(preCode)
+    }
+
+    fun createStartStateCases(): List<StartStateCondition> {
         val singleCharStates =
             states.filter { it.length == 1 }
                 .sorted()
@@ -71,31 +81,42 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
     fun indent(code: Sequence<String>, baseIndentation: Int = 0): String {
         val codeLines = code.toMutableList()
         var indentation = baseIndentation
+
         codeLines.forEachIndexed { lineNumber, line ->
-            val reducedLine = line.trim()
-            if (reducedLine.isNotEmpty()) {
-                if ("}])".contains(reducedLine.first())) {
-                    codeLines[lineNumber] =
-                        " ".repeat((indentation - STANDARD_INDENTATION).coerceAtLeast(0)) + reducedLine
+            val trimmedLine = line.trim()
+            if (trimmedLine.isNotEmpty()) {
+                if (isSingleBracket(trimmedLine)) {
+                    codeLines[lineNumber] = trimmedLine.addIndentation(max(0, indentation - STANDARD_INDENTATION))
                 } else {
-                    codeLines[lineNumber] = " ".repeat(indentation.coerceAtLeast(0)) + reducedLine
+                    codeLines[lineNumber] = trimmedLine.addIndentation(max(0, indentation))
                 }
-
-                reducedLine.forEach {
-
-                    if ("{([".contains(it)) {
-                        indentation += STANDARD_INDENTATION
-                    }
-                    if ("}])".contains(it)) {
-                        indentation -= STANDARD_INDENTATION
-                    }
-                }
+                indentation = calculateNewIndentation(trimmedLine, indentation)
             } else {
                 codeLines[lineNumber] = EMPTY_LINE
             }
         }
 
         return codeLines.joinToString(separator = "\n")
+    }
+
+    private fun isSingleBracket(trimmedLine: String): Boolean {
+        return ("}])".contains(trimmedLine.first()))
+    }
+
+    private fun calculateNewIndentation(trimmedLine: String, indentation: Int): Int {
+        return indentation + (trimmedLine.count { "{([".contains(it) } - trimmedLine.count { "}])".contains(it) }) * STANDARD_INDENTATION
+    }
+
+    private fun determineAndCreateClosingBrackets(codeLines: Sequence<String>): Sequence<String> {
+        val openingBracketCount = codeLines.count { it.contains("{") }
+        val closingBracketCount = codeLines.count { it.contains("}") }
+        val bracketCountDifference = openingBracketCount - closingBracketCount
+
+        return sequence {
+            repeat(bracketCountDifference) {
+                yield("}")
+            }
+        }
     }
 }
 
