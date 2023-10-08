@@ -4,21 +4,50 @@ import kotlin.math.max
 const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
 const val STANDARD_INDENTATION = 4
 
-class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
+class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
 
     private val states = keywords.flatMap(Keyword::splitKeywordToStates).distinct().sorted()
 
     fun generate(): String {
-        val codeLines = generateStateEnumClass() +
+        val codeLines = generateTokenTypeEnum() +
+                generateTokenDataClass() +
+                generateStateEnumClass() +
                 generateStateAndToken() +
-                generateStateMachine() +
-                sequenceOf("")
+                generateStateMachine()
 
         return indent(codeLines)
     }
 
+    private fun generateTokenDataClass(): Sequence<String> {
+        val code = sequenceOf(
+            "data class Token(val type: TokenType, val value: String) {",
+            "override fun toString(): String {",
+            "return \"Token Type: \$type, Value: \$value\""
+        )
+
+        return code + determineAndCreateClosingBrackets(code)
+    }
+
+    private fun generateTokenTypeEnum(): Sequence<String> {
+        // outsource this
+        val dataTypes = listOf("INT", "DOUBLE", "FLOAT", "SHORT", "LONG", "BOOL")
+
+        val uppercaseKeywords = keywords.map { it.name.uppercase(Locale.getDefault()) }
+        val uppercaseLiterals = uppercaseKeywords.filter { it in dataTypes }.map { it + "_LITERAL" }
+
+        val code =
+            sequenceOf("enum class TokenType {") +
+                    (uppercaseKeywords + uppercaseLiterals).sorted().map { "$it," } +
+                    // outsource
+                    sequenceOf("ASSIGN,", "IDENTIFIER,", "SEMICOLON,")
+
+        return code + determineAndCreateClosingBrackets(code)
+
+    }
+
     fun generateStateEnumClass(): Sequence<String> {
-        return sequenceOf("enum class State {") + generateEnumEntries() + sequenceOf("}", EMPTY_LINE)
+        val code = sequenceOf("enum class State {") + generateEnumEntries()
+        return code + determineAndCreateClosingBrackets(code)
     }
 
     private fun generateEnumEntries(): Sequence<String> {
@@ -55,7 +84,7 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         )
 
         val startStateCases = createStartStateCases().flatMap(StartStateCondition::getIfClauseAsSequence).asSequence()
-        return preCode + startStateCases + determineAndCreateClosingBrackets(preCode)
+        return preCode + startStateCases + determineAndCreateClosingBrackets(preCode, false)
     }
 
     fun createStartStateCases(): List<StartStateCondition> {
@@ -107,15 +136,24 @@ class CodeGenerator(keywords: Array<Keyword> = Keyword.values()) {
         return indentation + (trimmedLine.count { "{([".contains(it) } - trimmedLine.count { "}])".contains(it) }) * STANDARD_INDENTATION
     }
 
-    private fun determineAndCreateClosingBrackets(codeLines: Sequence<String>): Sequence<String> {
+    private fun determineAndCreateClosingBrackets(
+        codeLines: Sequence<String>,
+        attachSingleLine: Boolean = true
+    ): Sequence<String> {
         val openingBracketCount = codeLines.count { it.contains("{") }
         val closingBracketCount = codeLines.count { it.contains("}") }
         val bracketCountDifference = openingBracketCount - closingBracketCount
 
-        return sequence {
+        val closingBrackets = sequence {
             repeat(bracketCountDifference) {
                 yield("}")
             }
+        }
+
+        return if (attachSingleLine) {
+            closingBrackets + sequenceOf(EMPTY_LINE)
+        } else {
+            closingBrackets
         }
     }
 }
