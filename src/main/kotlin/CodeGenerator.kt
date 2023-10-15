@@ -38,6 +38,7 @@ class CodeGenerator(
         return sequenceOf(
             "private fun checkAndChangeState(char: Char, states: Map<Char, State>) {",
             "currentState = states[char] ?: State.IDENTIFIER",
+            "if (currentState != State.IDENTIFIER || char in 'a'..'z' || char in 'A'..'Z') {",
             "currentToken.append(char)"
         ).determineAndCreateClosingBracketsExtension()
     }
@@ -106,7 +107,11 @@ class CodeGenerator(
             } else {
                 val followUpStates = states.filter { it.startsWith(state) && it.length == state.length + 1 }
                 val mapAssignment =
-                    followUpStates.joinToString { "'${it.last()}' to State.${it.uppercase(Locale.getDefault())}" }
+                    followUpStates.joinToString {
+                        "'${
+                            it.last().lowercase()
+                        }' to State.${it.uppercase(Locale.getDefault())}"
+                    }
 
                 sequenceOf(
                     "State.${state.uppercase(Locale.getDefault())} -> {",

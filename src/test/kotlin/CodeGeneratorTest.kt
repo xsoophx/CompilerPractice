@@ -9,7 +9,7 @@ class CodeGeneratorTest {
 
     @ParameterizedTest
     @MethodSource("statesByKeywords")
-    fun `should create correct state enum class`(keywords: Array<Keyword>, expected: String) {
+    fun `should create correct state enum class`(keywords: Sequence<TokenType>, expected: String) {
         val codeGenerator = CodeGenerator(keywords)
         val enumClass = codeGenerator.generateStateEnumClass()
 
@@ -29,7 +29,7 @@ class CodeGeneratorTest {
             StartStateCondition(StringIfCondition("in '0'..'9'"), "INT_LITERAL"),
         )
 
-        assertEquals(expected = expected, actual = CodeGenerator(arrayOf(Keyword.INT)).createStartStateCases())
+        assertEquals(expected = expected, actual = CodeGenerator(sequenceOf(TokenType.INT)).createStartStateCases())
     }
 
     @Test
@@ -42,7 +42,7 @@ class CodeGeneratorTest {
         @JvmStatic
         fun statesByKeywords() = listOf(
             Arguments.of(
-                arrayOf(Keyword.BOOL, Keyword.DOUBLE, Keyword.INT), """
+                arrayOf(TokenType.BOOL, TokenType.DOUBLE, TokenType.INT), """
                 enum class State {
                     B,
                     BO,
@@ -67,7 +67,7 @@ class CodeGeneratorTest {
                 """.trimIndent()
             ),
             Arguments.of(
-                arrayOf(Keyword.BREAK, Keyword.CONTINUE, Keyword.ELSE), """
+                arrayOf(TokenType.BREAK, TokenType.CONTINUE, TokenType.ELSE), """
                 enum class State {
                     B,
                     BR,
@@ -96,7 +96,7 @@ class CodeGeneratorTest {
                 """.trimIndent()
             ),
             Arguments.of(
-                arrayOf(Keyword.BOOL, Keyword.BREAK), """
+                arrayOf(TokenType.BOOL, TokenType.BREAK), """
                 enum class State {
                     B,
                     BO,

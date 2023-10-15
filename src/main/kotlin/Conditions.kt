@@ -1,7 +1,7 @@
 data class StartStateCondition(val condition: StateIfCondition, val nextState: String) : StateMachineCondition {
     private fun getIfClause(): String {
         val ifClause = when (condition) {
-            is CharIfCondition -> "'${condition.char}'"
+            is CharIfCondition -> "'${condition.char.lowercase()}'"
             is StringIfCondition -> condition.string
             else -> throw IllegalArgumentException("Unknown condition type")
         }

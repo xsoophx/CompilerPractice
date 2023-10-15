@@ -7,29 +7,32 @@ class KeywordStateTest {
 
     @ParameterizedTest
     @MethodSource("keywords")
-    fun `should split keywords in correct states`(keywordState: Keyword, expected: List<String>) {
-        val splits = keywordState.splitKeywordToStates()
+    fun `should split keywords in correct states`(keyword: TokenType, expected: List<String>) {
+        val splits = TokenType.splitKeywordToStates(keyword)
         assertEquals(expected = expected, actual = splits.toList())
     }
 
     companion object {
         @JvmStatic
         fun keywords() = listOf(
-            Arguments.of(Keyword.BOOL, listOf("b", "bo", "boo", "bool")),
-            Arguments.of(Keyword.DOUBLE, listOf("d", "do", "dou", "doub", "doubl", "double")),
-            Arguments.of(Keyword.INT, listOf("i", "in", "int")),
-            Arguments.of(Keyword.BREAK, listOf("b", "br", "bre", "brea", "break")),
-            Arguments.of(Keyword.CONTINUE, listOf("c", "co", "con", "cont", "conti", "contin", "continu", "continue")),
-            Arguments.of(Keyword.ELSE, listOf("e", "el", "els", "else")),
-            Arguments.of(Keyword.FOR, listOf("f", "fo", "for")),
-            Arguments.of(Keyword.IF, listOf("i", "if")),
-            Arguments.of(Keyword.RETURN, listOf("r", "re", "ret", "retu", "retur", "return")),
-            Arguments.of(Keyword.WHILE, listOf("w", "wh", "whi", "whil", "while")),
-            Arguments.of(Keyword.VOID, listOf("v", "vo", "voi", "void")),
-            Arguments.of(Keyword.DO, listOf("d", "do")),
-            Arguments.of(Keyword.FLOAT, listOf("f", "fl", "flo", "floa", "float")),
-            Arguments.of(Keyword.LONG, listOf("l", "lo", "lon", "long")),
-            Arguments.of(Keyword.SHORT, listOf("s", "sh", "sho", "shor", "short")),
+            Arguments.of(TokenType.BOOL, listOf("B", "BO", "BOO", "BOOL")),
+            Arguments.of(TokenType.DOUBLE, listOf("D", "DO", "DOU", "DOUB", "DOUBL", "DOUBLE")),
+            Arguments.of(TokenType.INT, listOf("I", "IN", "INT")),
+            Arguments.of(TokenType.BREAK, listOf("B", "BR", "BRE", "BREA", "BREAK")),
+            Arguments.of(
+                TokenType.CONTINUE,
+                listOf("C", "CO", "CON", "CONT", "CONTI", "CONTIN", "CONTINU", "CONTINUE")
+            ),
+            Arguments.of(TokenType.ELSE, listOf("E", "EL", "ELS", "ELSE")),
+            Arguments.of(TokenType.FOR, listOf("F", "FO", "FOR")),
+            Arguments.of(TokenType.IF, listOf("I", "IF")),
+            Arguments.of(TokenType.RETURN, listOf("R", "RE", "RET", "RETU", "RETUR", "RETURN")),
+            Arguments.of(TokenType.WHILE, listOf("W", "WH", "WHI", "WHIL", "WHILE")),
+            Arguments.of(TokenType.VOID, listOf("V", "VO", "VOI", "VOID")),
+            Arguments.of(TokenType.DO, listOf("D", "DO")),
+            Arguments.of(TokenType.FLOAT, listOf("F", "FL", "FLO", "FLOA", "FLOAT")),
+            Arguments.of(TokenType.LONG, listOf("L", "LO", "LON", "LONG")),
+            Arguments.of(TokenType.SHORT, listOf("S", "SH", "SHO", "SHOR", "SHORT")),
         )
     }
 }
