@@ -4,11 +4,14 @@ import kotlin.math.max
 const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
 const val STANDARD_INDENTATION = 4
 
-class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
+class CodeGenerator(
+    private val keywords: Sequence<TokenType> = TokenType.tokenTypeKeywords,
+) {
 
-    private val states = keywords.flatMap(Keyword::splitKeywordToStates).distinct().sorted()
+    private val states = keywords.flatMap(TokenType::splitKeywordToStates).distinct().sorted()
     private val statesWithTokenType =
-        keywords.map { it.splitKeywordToStatesWithTokenType() }.reduce { acc, map -> acc + map }.toSortedMap()
+        keywords.map(TokenType::splitKeywordToStatesWithTokenType).reduce { acc, map -> acc + map }
+            .toSortedMap()
 
     fun generate(): String {
         val codeLines = generateTokenTypeEnum() +
@@ -80,7 +83,7 @@ class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
     }
 
     private fun getKeywordStatesAsString(): Sequence<String> {
-        return states.map { it.uppercase(Locale.getDefault()) }.asSequence()
+        return states.map { it.uppercase(Locale.getDefault()) }
     }
 
     private fun generateStateAndToken(): Sequence<String> {
