@@ -4,11 +4,21 @@ data class Token(val type: TokenType, val value: String) {
     }
 }
 
-enum class TokenType {
-    ASSIGN,
+enum class TokenClass {
+    LITERAL,
     IDENTIFIER,
+    KEYWORD,
+    SYMBOL,
+}
+
+enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD) {
+    ASSIGN(TokenClass.SYMBOL),
+    IDENTIFIER(TokenClass.IDENTIFIER),
     IF,
     INT,
-    INT_LITERAL,
-    SEMICOLON
+    INT_LITERAL(TokenClass.LITERAL),
+    SEMICOLON(TokenClass.SYMBOL),
+    OPENING_BRACKET(TokenClass.SYMBOL),
+    CLOSING_BRACKET(TokenClass.SYMBOL),
+    APOSTROPHE(TokenClass.SYMBOL),
 }

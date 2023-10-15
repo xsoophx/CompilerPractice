@@ -13,7 +13,8 @@ data class StartStateCondition(val condition: StateIfCondition, val nextState: S
             getIfClause(),
             "currentState = State.$nextState",
             "currentToken.append(char)",
-            "}"
+            "}",
+            EMPTY_LINE
         )
     }
 

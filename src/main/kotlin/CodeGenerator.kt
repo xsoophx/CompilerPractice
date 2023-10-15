@@ -7,16 +7,38 @@ const val STANDARD_INDENTATION = 4
 class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
 
     private val states = keywords.flatMap(Keyword::splitKeywordToStates).distinct().sorted()
+    private val statesWithTokenType =
+        keywords.map { it.splitKeywordToStatesWithTokenType() }.reduce { acc, map -> acc + map }.toSortedMap()
 
     fun generate(): String {
         val codeLines = generateTokenTypeEnum() +
                 generateTokenDataClass() +
                 generateStateEnumClass() +
                 generateStateAndToken() +
-                generateStateMachine()
+                generateStateMachine() +
+                generateCheckAndChangeStateFunction() +
+                generateSetStartStateFunction()
 
         return indent(codeLines)
     }
+
+    private fun generateSetStartStateFunction(): Sequence<String> {
+        return sequenceOf(
+            "private fun setStartState() {",
+            "currentToken = StringBuilder()",
+            "currentState = State.START"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
+
+    private fun generateCheckAndChangeStateFunction(): Sequence<String> {
+        return sequenceOf(
+            "private fun checkAndChangeState(char: Char, states: Map<Char, State>) {",
+            "currentState = states[char] ?: State.IDENTIFIER",
+            "currentToken.append(char)"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
 
     private fun generateTokenDataClass(): Sequence<String> {
         val code = sequenceOf(
@@ -64,18 +86,54 @@ class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
     private fun generateStateAndToken(): Sequence<String> {
         return sequenceOf(
             "private var currentState = State.START",
-            "private var currentToken = StringBuilder()\n"
+            "private var currentToken = StringBuilder()",
+            EMPTY_LINE
         )
     }
 
     private fun generateStateMachine(): Sequence<String> {
+        return (createStartStates() + createReadStates()).determineAndCreateClosingBracketsExtension()
+    }
+
+    private fun createStartStates(): Sequence<String> {
         val preCode = sequenceOf(
             "fun readStates(char: Char, tokens: MutableList<Token>) {",
             "when (currentState) {"
         )
         val startStateCases = createTopLevelStateCase()
-        return preCode + startStateCases + determineAndCreateClosingBrackets(preCode)
+        return preCode + startStateCases
     }
+
+    private fun createReadStates(): Sequence<String> {
+        return statesWithTokenType.asSequence().flatMap { (state, keyword) ->
+            if (keyword != null) {
+                createEndReadState(state)
+            } else {
+                val followUpStates = states.filter { it.startsWith(state) && it.length == state.length + 1 }
+                val mapAssignment =
+                    followUpStates.joinToString { "'${it.last()}' to State.${it.uppercase(Locale.getDefault())}" }
+
+                sequenceOf(
+                    "State.${state.uppercase(Locale.getDefault())} -> {",
+                    "checkAndChangeState(char, mapOf($mapAssignment))"
+                ).determineAndCreateClosingBracketsExtension()
+            }
+        }
+    }
+
+    private fun createEndReadState(state: String): Sequence<String> {
+        return sequenceOf(
+            "State.${state.uppercase(Locale.getDefault())} -> {",
+            "if (char.isLetterOrDigit()) {",
+            "currentToken.append(char)",
+            "currentState = State.IDENTIFIER",
+            "} else {",
+            "tokens.add(Token(TokenType.${state.uppercase(Locale.getDefault())}, currentToken.toString()))",
+            "setStartState()",
+            "readStates(char, tokens)"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
 
     private fun createTopLevelStateCase(): Sequence<String> {
         val preCode = sequenceOf(
@@ -84,7 +142,7 @@ class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
         )
 
         val startStateCases = createStartStateCases().flatMap(StartStateCondition::getIfClauseAsSequence).asSequence()
-        return preCode + startStateCases + determineAndCreateClosingBrackets(preCode, false)
+        return (preCode + startStateCases).determineAndCreateClosingBracketsExtension()
     }
 
     fun createStartStateCases(): List<StartStateCondition> {
@@ -156,6 +214,9 @@ class CodeGenerator(private val keywords: Array<Keyword> = Keyword.values()) {
             closingBrackets
         }
     }
+
+    private fun Sequence<String>.determineAndCreateClosingBracketsExtension(attachSingleLine: Boolean = true): Sequence<String> =
+        this + determineAndCreateClosingBrackets(this, attachSingleLine)
 }
 
 enum class NonSplittableStates(val condition: StateIfCondition?, val hasToBeLast: Boolean = false) {
