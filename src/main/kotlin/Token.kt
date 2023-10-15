@@ -33,14 +33,19 @@ enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD) {
     WHILE,
 
     // symbols
-    SEMICOLON(TokenClass.SYMBOL),
-    OPENING_BRACKET(TokenClass.SYMBOL),
-    CLOSING_BRACKET(TokenClass.SYMBOL),
     APOSTROPHE(TokenClass.SYMBOL),
     ASSIGN(TokenClass.SYMBOL),
+    CLOSING_BRACKET(TokenClass.SYMBOL),
+    OPENING_BRACKET(TokenClass.SYMBOL),
+    SEMICOLON(TokenClass.SYMBOL),
 
     // literals
+    BOOL_LITERAL(TokenClass.LITERAL),
+    CHAR_LITERAL(TokenClass.LITERAL),
+    DOUBLE_LITERAL(TokenClass.LITERAL),
+    FLOAT_LITERAL(TokenClass.LITERAL),
     INT_LITERAL(TokenClass.LITERAL),
+    LONG_LITERAL(TokenClass.LITERAL),
 
     IDENTIFIER(TokenClass.IDENTIFIER);
 

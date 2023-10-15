@@ -54,17 +54,9 @@ class CodeGenerator(
     }
 
     private fun generateTokenTypeEnum(): Sequence<String> {
-        // outsource this
-        val dataTypes = listOf("INT", "DOUBLE", "FLOAT", "SHORT", "LONG", "BOOL")
-
-        val uppercaseKeywords = keywords.map { it.name.uppercase(Locale.getDefault()) }
-        val uppercaseLiterals = uppercaseKeywords.filter { it in dataTypes }.map { it + "_LITERAL" }
-
-        val code =
-            sequenceOf("enum class TokenType {") +
-                    (uppercaseKeywords + uppercaseLiterals).sorted().map { "$it," } +
-                    // outsource
-                    sequenceOf("ASSIGN,", "IDENTIFIER,", "SEMICOLON,")
+        val uppercaseKeywords =
+            TokenType.values().sortedBy { it.clazz }.map { it.name.uppercase(Locale.getDefault()) }
+        val code = sequenceOf("enum class TokenType {") + uppercaseKeywords.map { "$it," }
 
         return code + determineAndCreateClosingBrackets(code)
 
@@ -95,7 +87,7 @@ class CodeGenerator(
     }
 
     private fun generateStateMachine(): Sequence<String> {
-        return (createStartStates() + createReadStates()).determineAndCreateClosingBracketsExtension()
+        return (createStartStates() + createReadStates() + createSymbolStates() + createLiteralStates() + createIdentifierState()).determineAndCreateClosingBracketsExtension()
     }
 
     private fun createStartStates(): Sequence<String> {
@@ -121,6 +113,49 @@ class CodeGenerator(
                     "checkAndChangeState(char, mapOf($mapAssignment))"
                 ).determineAndCreateClosingBracketsExtension()
             }
+        }
+    }
+
+    private fun createSymbolStates(): Sequence<String> {
+        val symbols = TokenType.values().filter { it.clazz == TokenClass.SYMBOL }.map { it.name }
+
+        return symbols.asSequence().flatMap { symbol ->
+            sequenceOf(
+                "State.${symbol.uppercase(Locale.getDefault())} -> {",
+                "tokens.add(Token(TokenType.${symbol.uppercase(Locale.getDefault())}, currentToken.toString()))",
+                "setStartState()",
+                "readStates(char, tokens)"
+            ).determineAndCreateClosingBracketsExtension()
+        }
+    }
+
+    private fun createIdentifierState(): Sequence<String> {
+        return sequenceOf(
+            "State.IDENTIFIER -> {",
+            "if (char.isLetterOrDigit()) {",
+            "currentToken.append(char)",
+            "} else {",
+            "tokens.add(Token(TokenType.IDENTIFIER, currentToken.toString()))",
+            "setStartState()",
+            "readStates(char, tokens)"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
+    private fun createLiteralStates(): Sequence<String> {
+        val literals = TokenType.values().filter { it.clazz == TokenClass.LITERAL }.map { it.name }
+        val nonSplittableStates = literals.mapNotNull { NonSplittableStates.byName(it) }
+
+        return nonSplittableStates.asSequence().flatMap { literal ->
+            sequenceOf(
+                "State.${literal.name.uppercase(Locale.getDefault())} -> {",
+                "if (${literal.readStateCondition.toString()}) {",
+                "currentToken.append(char)",
+                "currentState = State.IDENTIFIER",
+                "} else {",
+                "tokens.add(Token(TokenType.${literal.name.uppercase(Locale.getDefault())}, currentToken.toString()))",
+                "setStartState()",
+                "readStates(char, tokens)"
+            ).determineAndCreateClosingBracketsExtension()
         }
     }
 
@@ -156,9 +191,9 @@ class CodeGenerator(
 
         val nonSplittableStates = NonSplittableStates.values()
             .asSequence()
-            .filter { it.condition != null }
+            .filter { it.startStateCondition != null }
             .sortedBy { it.hasToBeLast }
-            .associate { it.condition!! to it.name.uppercase(Locale.getDefault()) }
+            .associate { it.startStateCondition!! to it.name.uppercase(Locale.getDefault()) }
 
         val startStateConditions =
             (singleCharStates + nonSplittableStates).map { (condition, state) ->
@@ -194,7 +229,13 @@ class CodeGenerator(
     }
 
     private fun calculateNewIndentation(trimmedLine: String, indentation: Int): Int {
-        return indentation + (trimmedLine.count { "{([".contains(it) } - trimmedLine.count { "}])".contains(it) }) * STANDARD_INDENTATION
+        val reducedLine = trimmedLine.filterForQuotes("\"").filterForQuotes("'")
+        return indentation + (reducedLine.count { "{([".contains(it) } - reducedLine.count { "}])".contains(it) }) * STANDARD_INDENTATION
+    }
+
+    private fun String.filterForQuotes(delimiter: String): String {
+        return split(delimiter).filter { it.lastOrNull() != '\\' }.filterIndexed { index, _ -> index % 2 == 0 }
+            .joinToString("")
     }
 
     private fun determineAndCreateClosingBrackets(
@@ -222,10 +263,24 @@ class CodeGenerator(
         this + determineAndCreateClosingBrackets(this, attachSingleLine)
 }
 
-enum class NonSplittableStates(val condition: StateIfCondition?, val hasToBeLast: Boolean = false) {
-    IDENTIFIER(StringIfCondition("in 'a'..'z', in 'A'..'Z'"), true),
-    INT_LITERAL(StringIfCondition("in '0'..'9'"), true),
-    SEMICOLON(CharIfCondition(';')),
+// add more literals
+enum class NonSplittableStates(
+    val startStateCondition: StateIfCondition?,
+    val readStateCondition: StateIfCondition? = null,
+    val hasToBeLast: Boolean = false
+) {
+    APOSTROPHE(StringIfCondition("'\\''")),
     ASSIGN(CharIfCondition('=')),
+    CLOSING_BRACKET(CharIfCondition(')')),
+    IDENTIFIER(StringIfCondition("in 'a'..'z', in 'A'..'Z'"), hasToBeLast = true),
+    INT_LITERAL(StringIfCondition("in '0'..'9'"), StringIfCondition("char.isDigit()"), true),
+    OPENING_BRACKET(CharIfCondition('(')),
+    SEMICOLON(CharIfCondition(';')),
     START(null);
+
+    companion object {
+        fun byName(name: String): NonSplittableStates? {
+            return values().find { it.name == name }
+        }
+    }
 }
