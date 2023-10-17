@@ -9,7 +9,7 @@ class KeywordStateTest {
     @MethodSource("keywords")
     fun `should split keywords in correct states`(keyword: TokenType, expected: List<String>) {
         val splits = TokenType.splitKeywordToStates(keyword)
-        assertEquals(expected = expected, actual = splits.toList())
+        assertEquals(expected = expected.map { keyword to it }, actual = splits.toList())
     }
 
     companion object {
