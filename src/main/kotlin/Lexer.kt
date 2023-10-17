@@ -33,6 +33,9 @@ class Lexer {
         ELS,
         ELSE,
         F,
+        FA,
+        FAL,
+        FALS,
         FL,
         FLO,
         FLOA,
@@ -58,6 +61,9 @@ class Lexer {
         SHO,
         SHOR,
         SHORT,
+        T,
+        TR,
+        TRU,
         V,
         VO,
         VOI,
@@ -72,6 +78,8 @@ class Lexer {
         CLOSING_BRACKET,
         IDENTIFIER,
         INT_LITERAL,
+        BOOL_LITERAL,
+        CHAR_LITERAL,
         OPENING_BRACKET,
         SEMICOLON,
         START,
@@ -126,6 +134,11 @@ class Lexer {
                         currentToken.append(char)
                     }
 
+                    't' -> {
+                        currentState = State.T
+                        currentToken.append(char)
+                    }
+
                     'v' -> {
                         currentState = State.V
                         currentToken.append(char)
@@ -138,7 +151,6 @@ class Lexer {
 
                     '\'' -> {
                         currentState = State.APOSTROPHE
-                        currentToken.append(char)
                     }
 
                     '=' -> {
@@ -333,7 +345,19 @@ class Lexer {
             }
 
             State.F -> {
-                checkAndChangeState(char, mapOf('l' to State.FL, 'o' to State.FO))
+                checkAndChangeState(char, mapOf('a' to State.FA, 'l' to State.FL, 'o' to State.FO))
+            }
+
+            State.FA -> {
+                checkAndChangeState(char, mapOf('l' to State.FAL))
+            }
+
+            State.FAL -> {
+                checkAndChangeState(char, mapOf('s' to State.FALS))
+            }
+
+            State.FALS -> {
+                checkAndChangeState(char, mapOf('e' to State.BOOL_LITERAL))
             }
 
             State.FL -> {
@@ -485,6 +509,18 @@ class Lexer {
                 }
             }
 
+            State.T -> {
+                checkAndChangeState(char, mapOf('r' to State.TR))
+            }
+
+            State.TR -> {
+                checkAndChangeState(char, mapOf('u' to State.TRU))
+            }
+
+            State.TRU -> {
+                checkAndChangeState(char, mapOf('e' to State.BOOL_LITERAL))
+            }
+
             State.V -> {
                 checkAndChangeState(char, mapOf('o' to State.VO))
             }
@@ -536,9 +572,8 @@ class Lexer {
             }
 
             State.APOSTROPHE -> {
-                tokens.add(Token(TokenType.APOSTROPHE, currentToken.toString()))
-                setStartState()
-                readStates(char, tokens)
+                currentToken.append(char)
+                currentState = State.CHAR_LITERAL
             }
 
             State.ASSIGN -> {
@@ -573,6 +608,26 @@ class Lexer {
                     tokens.add(Token(TokenType.INT_LITERAL, currentToken.toString()))
                     setStartState()
                     readStates(char, tokens)
+                }
+            }
+
+            State.BOOL_LITERAL -> {
+                if (char.isLetterOrDigit()) {
+                    currentToken.append(char)
+                    currentState = State.IDENTIFIER
+                } else {
+                    tokens.add(Token(TokenType.BOOL_LITERAL, currentToken.toString()))
+                    setStartState()
+                    readStates(char, tokens)
+                }
+            }
+
+            State.CHAR_LITERAL -> {
+                if (char == '\'') {
+                    tokens.add(Token(TokenType.CHAR_LITERAL, currentToken.toString()))
+                    setStartState()
+                } else {
+                    throw IllegalArgumentException("Char literal must contain exactly one character!")
                 }
             }
 

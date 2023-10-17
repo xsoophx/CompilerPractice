@@ -5,13 +5,14 @@ const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
 const val STANDARD_INDENTATION = 4
 
 class CodeGenerator(
-    private val keywords: Sequence<TokenType> = TokenType.tokenTypeKeywords,
+    keywords: Sequence<TokenType> = TokenType.tokenTypeKeywords,
 ) {
 
-    private val states = keywords.flatMap(TokenType::splitKeywordToStates).distinct().sorted()
-    private val statesWithTokenType =
-        keywords.map(TokenType::splitKeywordToStatesWithTokenType).reduce { acc, map -> acc + map }
-            .toSortedMap()
+    private val states =
+        keywords
+            .flatMap { keyword -> TokenType.splitKeywordToStates(keyword) }
+            .distinctBy { it.second }
+            .toList()
 
     fun generate(): String {
         val codeLines = generateTokenTypeEnum() +
@@ -36,7 +37,7 @@ class CodeGenerator(
 
     private fun generateCheckAndChangeStateFunction(): Sequence<String> {
         return sequenceOf(
-            "private fun checkAndChangeState(char: Char, states: Map<Char, State>) {",
+            "private fun $CHECK_AND_CHANGE_FUNCTION_NAME(char: Char, states: Map<Char, State>) {",
             "currentState = states[char] ?: State.IDENTIFIER",
             "if (currentState != State.IDENTIFIER || char in 'a'..'z' || char in 'A'..'Z') {",
             "currentToken.append(char)"
@@ -68,15 +69,15 @@ class CodeGenerator(
         return code + determineAndCreateClosingBrackets(code)
     }
 
-    private fun generateEnumEntries(): Sequence<String> {
+    private fun generateEnumEntries(): List<String> {
         val states = getKeywordStatesAsString() + NonSplittableStates.values()
             .map { it.name.uppercase(Locale.getDefault()) }.sorted()
 
         return states.map { "$it," }
     }
 
-    private fun getKeywordStatesAsString(): Sequence<String> {
-        return states.map { it.uppercase(Locale.getDefault()) }
+    private fun getKeywordStatesAsString(): List<String> {
+        return states.map { it.second.uppercase(Locale.getDefault()) }
     }
 
     private fun generateStateAndToken(): Sequence<String> {
@@ -100,26 +101,64 @@ class CodeGenerator(
         return preCode + startStateCases
     }
 
-    private fun createReadStates(): Sequence<String> {
-        return statesWithTokenType.asSequence().flatMap { (state, keyword) ->
-            if (keyword != null) {
-                createEndReadState(state)
-            } else {
-                val followUpStates = states.filter { it.startsWith(state) && it.length == state.length + 1 }
-                val mapAssignment =
-                    followUpStates.joinToString {
-                        "'${
-                            it.last().lowercase()
-                        }' to State.${it.uppercase(Locale.getDefault())}"
-                    }
+    private fun splitStatesWithSpecificFollowState(): Sequence<String> {
+        val statesWithSpecificFollowState =
+            TokenType.tokenTypeKeywords.filter { it.omitCharInformation != null && it.omitCharInformation.omitLastCharInState }
+        val splitStates = statesWithSpecificFollowState.flatMap { TokenType.splitKeywordToStates(it) }.toList()
 
-                sequenceOf(
-                    "State.${state.uppercase(Locale.getDefault())} -> {",
-                    "checkAndChangeState(char, mapOf($mapAssignment))"
-                ).determineAndCreateClosingBracketsExtension()
+        val result = splitStates.flatMap { (tokenType, state) ->
+            val followUpStates = states.filter { it.second.startsWith(state) && it.second.length == state.length + 1 }
+
+            if (followUpStates.isEmpty()) {
+                val mapAssignment =
+                    "'${tokenType.name.last().lowercase()}' to State.${tokenType.omitCharInformation?.nextTokenType}"
+
+                createStateWithMap(state, mapAssignment)
+
+            } else {
+                val mapAssignment = createMapAssignment(followUpStates)
+                createStateWithMap(state, mapAssignment)
             }
         }
+
+        return result.asSequence()
+
     }
+
+    private fun createReadStates(): Sequence<String> {
+        val statesWithSpecificFollowState = splitStatesWithSpecificFollowState()
+        val readStates = states
+            .filter { it.first.omitCharInformation == null }
+            .asSequence()
+            .flatMap { (tokenType, state) ->
+                if (tokenType.name.length == state.length) {
+                    createEndReadState(state)
+                } else {
+                    val followUpStates =
+                        states.filter { it.second.startsWith(state) && it.second.length == state.length + 1 }
+                    val mapAssignment = createMapAssignment(followUpStates)
+                    createStateWithMap(state, mapAssignment)
+
+                }
+            }
+
+        return readStates + statesWithSpecificFollowState
+    }
+
+    private fun createMapAssignment(followUpStates: List<Pair<TokenType, String>>): String {
+        return followUpStates.values().joinToString {
+            "'${it.last().lowercase()}' to State.${it.uppercase(Locale.getDefault())}"
+        }
+    }
+
+    private fun createStateWithMap(state: String, mapAssignment: String): Sequence<String> {
+        return sequenceOf(
+            "State.${state.uppercase(Locale.getDefault())} -> {",
+            "$CHECK_AND_CHANGE_FUNCTION_NAME(char, mapOf($mapAssignment))"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
+    private fun List<Pair<TokenType, String>>.values() = map { it.second }
 
     private fun createSymbolStates(): Sequence<String> {
         val symbols = TokenType.values().filter { it.clazz == TokenClass.SYMBOL }.map { it.name }
@@ -190,21 +229,28 @@ class CodeGenerator(
 
     fun createStartStateCases(): List<StartStateCondition> {
         val singleCharStates =
-            states.filter { it.length == 1 }
+            states.map { it.second }.filter { it.length == 1 }
                 .sorted()
-                .associate { CharIfCondition(it.first()) to it.uppercase(Locale.getDefault()) }
+                .map {
+                    StartStateCondition(
+                        condition = CharIfCondition(it.first()),
+                        nextState = it.uppercase(Locale.getDefault())
+                    )
+                }
 
         val nonSplittableStates = NonSplittableStates.values()
             .asSequence()
             .filter { it.startStateCondition != null }
             .sortedBy { it.hasToBeLast }
-            .associate { it.startStateCondition!! to it.name.uppercase(Locale.getDefault()) }
-
-        val startStateConditions =
-            (singleCharStates + nonSplittableStates).map { (condition, state) ->
-                StartStateCondition(condition, state)
+            .map {
+                StartStateCondition(
+                    condition = it.startStateCondition!!,
+                    nextState = it.name.uppercase(Locale.getDefault()),
+                    appendChar = it.appendChar,
+                )
             }
-        return startStateConditions
+
+        return (singleCharStates + nonSplittableStates).toList()
     }
 
 
@@ -270,11 +316,12 @@ class CodeGenerator(
 
 // add more literals
 enum class NonSplittableStates(
-    val startStateCondition: StateIfCondition?,
+    val startStateCondition: StateIfCondition? = null,
     val readStateCondition: StateIfCondition? = null,
-    val hasToBeLast: Boolean = false
+    val hasToBeLast: Boolean = false,
+    val appendChar: Boolean = true
 ) {
-    APOSTROPHE(StringIfCondition("'\\''")),
+    APOSTROPHE(StringIfCondition("'\\''"), appendChar = false),
     ASSIGN(CharIfCondition('=')),
     CLOSING_BRACKET(CharIfCondition(')')),
     IDENTIFIER(StringIfCondition("in 'a'..'z', in 'A'..'Z'"), hasToBeLast = true),

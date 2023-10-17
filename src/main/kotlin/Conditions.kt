@@ -1,4 +1,5 @@
-data class StartStateCondition(val condition: StateIfCondition, val nextState: String) : StateMachineCondition {
+data class StartStateCondition(val condition: StateIfCondition, val nextState: String, val appendChar: Boolean = true) :
+    StateMachineCondition {
     private fun getIfClause(): String {
         val ifClause = when (condition) {
             is CharIfCondition -> "'${condition.char.lowercase()}'"
@@ -12,10 +13,10 @@ data class StartStateCondition(val condition: StateIfCondition, val nextState: S
         return sequenceOf(
             getIfClause(),
             "currentState = State.$nextState",
-            "currentToken.append(char)",
+            "currentToken.append(char)".takeIf { appendChar },
             "}",
             EMPTY_LINE
-        )
+        ).filterNotNull()
     }
 
     override fun toString(): String {
@@ -38,25 +39,3 @@ data class StringIfCondition(val string: String) : StateIfCondition {
 }
 
 interface StateMachineCondition
-data class StateMachineState(
-    val state: String,
-    val conditions: List<StateMachineCondition>
-)
-
-data class StateCondition(val currentState: String, val possibleFollowStates: Map<Char, String>) :
-    StateMachineCondition {
-    override fun toString(): String {
-        val stateCases = sequenceOf(
-            0 to "State.$currentState -> ",
-            4 to "$CHECK_AND_CHANGE_FUNCTION_NAME(char, mapOf(${createStateMap()}))",
-        )
-
-        return stateCases.map { it.addIndentation() }.joinToString(separator = "\n")
-    }
-
-    private fun createStateMap(): String {
-        return possibleFollowStates.map { (char, state) ->
-            "'$char' to State.$state"
-        }.joinToString(separator = ", ")
-    }
-}

@@ -29,6 +29,22 @@ class LexerTest {
             Token(TokenType.SEMICOLON, ";"),
         )
 
+        private val booleanTokenTypes = listOf(
+            Token(TokenType.BOOL, "bool"),
+            Token(TokenType.IDENTIFIER, "b"),
+            Token(TokenType.ASSIGN, "="),
+            Token(TokenType.BOOL_LITERAL, "true"),
+            Token(TokenType.SEMICOLON, ";"),
+        )
+
+        private val charTokenTypes = listOf(
+            Token(TokenType.CHAR, "char"),
+            Token(TokenType.IDENTIFIER, "c"),
+            Token(TokenType.ASSIGN, "="),
+            Token(TokenType.CHAR_LITERAL, "a"),
+            Token(TokenType.SEMICOLON, ";"),
+        )
+
         @JvmStatic
         fun getIntAssignments() = listOf(
             Arguments.of("int a = 1;", tokenTypesOfA),
@@ -36,6 +52,8 @@ class LexerTest {
             Arguments.of("int a =1;", tokenTypesOfA),
             Arguments.of("int a=1;", tokenTypesOfA),
             Arguments.of("int a = 1;\nint b = 3;", tokenTypesOfA + tokenTypesOfB),
+            Arguments.of("bool b = true;", booleanTokenTypes),
+            Arguments.of("char c = 'a';", charTokenTypes),
         )
     }
 }
