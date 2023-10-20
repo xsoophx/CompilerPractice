@@ -1,3 +1,6 @@
+package cc.suffro.scannergenerator
+
+import cc.suffro.scannergenerator.data.TokenType
 import kotlin.test.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments

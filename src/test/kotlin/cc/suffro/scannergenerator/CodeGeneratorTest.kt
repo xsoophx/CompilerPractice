@@ -1,3 +1,12 @@
+package cc.suffro.scannergenerator
+
+import CodeGenerator
+import cc.suffro.scannergenerator.data.CharIfCondition
+import cc.suffro.scannergenerator.data.StartStateCondition
+import cc.suffro.scannergenerator.data.StringIfCondition
+import cc.suffro.scannergenerator.data.TokenType
+import cc.suffro.scannergenerator.generators.StateEnumClassGenerator
+import cc.suffro.scannergenerator.generators.StateMachineGenerator
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -5,17 +14,18 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 
+// TODO: fix this test
 class CodeGeneratorTest {
 
     @ParameterizedTest
     @MethodSource("statesByKeywords")
     fun `should create correct state enum class`(keywords: Sequence<TokenType>, expected: String) {
         val codeGenerator = CodeGenerator(keywords)
-        val enumClass = codeGenerator.generateStateEnumClass()
+        val enumClass = StateEnumClassGenerator(codeGenerator.states).generate()
 
         assertEquals(
             expected = expected,
-            actual = codeGenerator.indent(enumClass)
+            actual = indent(enumClass)
         )
     }
 
@@ -29,7 +39,8 @@ class CodeGeneratorTest {
             StartStateCondition(StringIfCondition("in '0'..'9'"), "INT_LITERAL"),
         )
 
-        assertEquals(expected = expected, actual = CodeGenerator(sequenceOf(TokenType.INT)).createStartStateCases())
+        val keywords = CodeGenerator(sequenceOf(TokenType.INT)).states
+        assertEquals(expected = expected, actual = StateMachineGenerator(keywords).createStartStateCases())
     }
 
     @Test

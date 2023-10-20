@@ -1,3 +1,8 @@
+package cc.suffro.scannergenerator
+
+import cc.suffro.scannergenerator.data.Token
+import cc.suffro.scannergenerator.data.TokenType
+
 class Lexer {
     private var currentState = State.START
     private var currentToken = StringBuilder()

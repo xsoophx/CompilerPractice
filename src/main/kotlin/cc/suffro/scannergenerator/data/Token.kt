@@ -1,3 +1,5 @@
+package cc.suffro.scannergenerator.data
+
 data class Token(val type: TokenType, val value: String) {
     override fun toString(): String {
         return "Token Type: $type, Value: $value"
@@ -63,10 +65,6 @@ enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD, val omitCharInf
                 .asSequence()
                 .map { keyword to keyword.name.take(it) }
                 .toList()
-        }
-
-        fun splitKeywordToStatesWithTokenType(keywords: Sequence<TokenType> = tokenTypeKeywords): List<SplitStateInformation> {
-            return keywords.flatMap { splitKeywordToStatesWithTokenType(it) }.toList()
         }
 
         private fun splitKeywordToStatesWithTokenType(keyword: TokenType): List<SplitStateInformation> {

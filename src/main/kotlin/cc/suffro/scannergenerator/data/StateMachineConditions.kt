@@ -1,3 +1,8 @@
+package cc.suffro.scannergenerator.data
+
+import cc.suffro.scannergenerator.EMPTY_LINE
+
+interface StateMachineCondition
 data class StartStateCondition(val condition: StateIfCondition, val nextState: String, val appendChar: Boolean = true) :
     StateMachineCondition {
     private fun getIfClause(): String {
@@ -23,19 +28,3 @@ data class StartStateCondition(val condition: StateIfCondition, val nextState: S
         return getIfClauseAsSequence().joinToString("\n")
     }
 }
-
-interface StateIfCondition
-
-data class CharIfCondition(val char: Char) : StateIfCondition {
-    override fun toString(): String {
-        return char.toString()
-    }
-}
-
-data class StringIfCondition(val string: String) : StateIfCondition {
-    override fun toString(): String {
-        return string
-    }
-}
-
-interface StateMachineCondition
