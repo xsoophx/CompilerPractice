@@ -1,6 +1,6 @@
 package cc.suffro.scannergenerator
 
-import CodeGenerator
+import cc.suffro.scannergenerator.generators.CodeGenerator
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileWriter

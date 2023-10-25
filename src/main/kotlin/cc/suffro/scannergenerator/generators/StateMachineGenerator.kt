@@ -1,6 +1,5 @@
 package cc.suffro.scannergenerator.generators
 
-import CHECK_AND_CHANGE_FUNCTION_NAME
 import cc.suffro.scannergenerator.data.CharIfCondition
 import cc.suffro.scannergenerator.data.Generator
 import cc.suffro.scannergenerator.data.NonSplittableState
@@ -106,16 +105,7 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
         val nonSplittableStates = literals.mapNotNull { NonSplittableState.byName(it) }
 
         return nonSplittableStates.asSequence().flatMap { literal ->
-            sequenceOf(
-                "State.${literal.name.uppercase(Locale.getDefault())} -> {",
-                "if (${literal.readStateCondition.toString()}) {",
-                "currentToken.append(char)",
-                "currentState = State.IDENTIFIER",
-                "} else {",
-                "tokens.add(Token(TokenType.${literal.name.uppercase(Locale.getDefault())}, currentToken.toString()))",
-                "setStartState()",
-                "readStates(char, tokens)"
-            ).determineAndCreateClosingBracketsExtension()
+            NonSplittableStateGenerator(literal).generate()
         }
     }
 
@@ -154,13 +144,13 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
 
         val nonSplittableStates = NonSplittableState.values()
             .asSequence()
-            .filter { it.startStateCondition != null }
+            .filter { it.startStateProperties != null }
             .sortedBy { it.hasToBeLast }
             .map {
                 StartStateCondition(
-                    condition = it.startStateCondition!!,
+                    condition = it.startStateProperties!!.condition,
                     nextState = it.name.uppercase(Locale.getDefault()),
-                    appendChar = it.appendChar,
+                    appendChar = it.startStateProperties.appendChar,
                 )
             }
 

@@ -1,6 +1,6 @@
 package cc.suffro.scannergenerator
 
-import STANDARD_INDENTATION
+import cc.suffro.scannergenerator.generators.STANDARD_INDENTATION
 import cc.suffro.scannergenerator.data.TokenType
 import kotlin.math.max
 

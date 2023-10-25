@@ -1,4 +1,9 @@
 package cc.suffro.scannergenerator.data
+
+import cc.suffro.scannergenerator.determineAndCreateClosingBracketsExtension
+import cc.suffro.scannergenerator.generators.NonSplittableStateGenerator
+import java.util.*
+
 /*
     This class describes states, which are not splittable.
     This means, that the state is not split into multiple states (e.g. INT -> I, IN, INT), but is a single state.
@@ -8,30 +13,40 @@ package cc.suffro.scannergenerator.data
     @hasToBeLast describes, if the state needs to be shown at the end of the state machine.
     @appendChar describes, if the char in the current state should be appended to the current token.
  */
+data class StartStateProperties(
+    val condition: StateIfCondition,
+    val appendChar: Boolean = true,
+)
+
 enum class NonSplittableState(
-    val startStateCondition: StateIfCondition?,
+    val startStateProperties: StartStateProperties?,
     val readStateCondition: StateIfCondition? = null,
     val hasToBeLast: Boolean = false,
-    val appendChar: Boolean = true
+    val hasCustomState: Boolean = false
 ) {
-    APOSTROPHE(StringIfCondition("'\\''"), appendChar = false),
-    ASSIGN(CharIfCondition('=')),
+    APOSTROPHE(StartStateProperties(StringIfCondition("'\\''"), appendChar = false)),
+    ASSIGN(StartStateProperties(CharIfCondition('='))),
     BOOL_LITERAL(
-        startStateCondition = null,
+        startStateProperties = null,
         readStateCondition = StringIfCondition("char.isLetterOrDigit()"),
-        hasToBeLast = true
-    ),
-    CHAR_LITERAL(
-        startStateCondition = null,
-        readStateCondition = StringIfCondition("'\\''"),
         hasToBeLast = true,
-        appendChar = false
     ),
-    CLOSING_BRACKET(CharIfCondition(')')),
-    IDENTIFIER(StringIfCondition("in 'a'..'z', in 'A'..'Z'"), hasToBeLast = true),
-    INT_LITERAL(StringIfCondition("in '0'..'9'"), StringIfCondition("char.isDigit()"), true),
-    OPENING_BRACKET(CharIfCondition('(')),
-    SEMICOLON(CharIfCondition(';')),
+
+    CHAR_LITERAL(
+        startStateProperties = null,
+        readStateCondition = StringIfCondition("char == '\\''"),
+        hasToBeLast = true,
+        hasCustomState = true,
+    ),
+    CLOSING_BRACKET(StartStateProperties(CharIfCondition(')'))),
+    IDENTIFIER(
+        StartStateProperties(StringIfCondition("in 'a'..'z', in 'A'..'Z'")),
+        hasToBeLast = true,
+        hasCustomState = true,
+    ),
+    INT_LITERAL(StartStateProperties(StringIfCondition("in '0'..'9'")), StringIfCondition("char.isDigit()"), true),
+    OPENING_BRACKET(StartStateProperties(CharIfCondition('('))),
+    SEMICOLON(StartStateProperties(CharIfCondition(';'))),
     START(null);
 
     companion object {

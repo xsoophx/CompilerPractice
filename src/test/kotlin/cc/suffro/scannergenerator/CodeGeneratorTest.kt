@@ -1,12 +1,13 @@
 package cc.suffro.scannergenerator
 
-import CodeGenerator
+import cc.suffro.scannergenerator.generators.CodeGenerator
 import cc.suffro.scannergenerator.data.CharIfCondition
 import cc.suffro.scannergenerator.data.StartStateCondition
 import cc.suffro.scannergenerator.data.StringIfCondition
 import cc.suffro.scannergenerator.data.TokenType
 import cc.suffro.scannergenerator.generators.StateEnumClassGenerator
 import cc.suffro.scannergenerator.generators.StateMachineGenerator
+import kotlin.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals

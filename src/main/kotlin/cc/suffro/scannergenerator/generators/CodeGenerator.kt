@@ -1,11 +1,9 @@
+package cc.suffro.scannergenerator.generators
+
 import cc.suffro.scannergenerator.EMPTY_LINE
 import cc.suffro.scannergenerator.data.Generator
 import cc.suffro.scannergenerator.data.TokenType
 import cc.suffro.scannergenerator.determineAndCreateClosingBracketsExtension
-import cc.suffro.scannergenerator.generators.StateEnumClassGenerator
-import cc.suffro.scannergenerator.generators.StateMachineGenerator
-import cc.suffro.scannergenerator.generators.TokenDataClassGenerator
-import cc.suffro.scannergenerator.generators.TokenTypeEnumGenerator
 import cc.suffro.scannergenerator.indent
 
 const val CHECK_AND_CHANGE_FUNCTION_NAME = "checkAndChangeState"
