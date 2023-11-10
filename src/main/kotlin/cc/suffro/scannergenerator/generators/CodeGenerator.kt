@@ -18,23 +18,44 @@ class CodeGenerator(keywords: Sequence<TokenType> = TokenType.tokenTypeKeywords)
             .toList()
 
     fun generate(): String {
-        val codeLines = TokenTypeEnumGenerator.generate() +
-                TokenDataClassGenerator.generate() +
-                StateEnumClassGenerator(states).generate() +
-                generateStateAndToken() +
-                StateMachineGenerator(states).generate() +
-                generateCheckAndChangeStateFunction() +
-                generateSetStartStateFunction()
+        val codeLines =
+            generateImports() +
+                    TokenTypeEnumGenerator.generate() +
+                    TokenDataClassGenerator.generate() +
+                    StateEnumClassGenerator(states).generate() +
+                    generateStateAndToken() +
+                    StateMachineGenerator(states).generate() +
+                    generateCheckAndChangeStateFunction() +
+                    generateTokenTypeByStateFunction() +
+                    generateSetStartStateFunction()
 
         return indent(codeLines)
     }
 
+    private fun generateImports(): Sequence<String> {
+        return sequenceOf("import java.util.*")
+    }
+
     private fun generateCheckAndChangeStateFunction(): Sequence<String> {
         return sequenceOf(
-            "private fun $CHECK_AND_CHANGE_FUNCTION_NAME(char: Char, states: Map<Char, State>) {",
+            "private fun $CHECK_AND_CHANGE_FUNCTION_NAME(char: Char, states: Map<Char, State>, tokens: MutableList<Token>) {",
             "currentState = states[char] ?: State.IDENTIFIER",
             "if (currentState != State.IDENTIFIER || char in 'a'..'z' || char in 'A'..'Z') {",
-            "currentToken.append(char)"
+            "currentToken.append(char)",
+            "} else {",
+            "val tokenType = tokenTypeByState(currentState)",
+            "tokens.add(Token(tokenType, currentToken.toString()))",
+            "setStartState()",
+            "readStates(char, tokens)"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
+    private fun generateTokenTypeByStateFunction(): Sequence<String> {
+        return sequenceOf(
+            "private fun tokenTypeByState(state: State): TokenType {",
+            "return TokenType.values()",
+            ".find { it.name.uppercase(Locale.getDefault()) == state.name.uppercase(Locale.getDefault()) }",
+            "?: throw IllegalArgumentException(\"Unknown state: \$state\")"
         ).determineAndCreateClosingBracketsExtension()
     }
 

@@ -2,6 +2,7 @@ package cc.suffro.scannergenerator
 
 import cc.suffro.scannergenerator.data.Token
 import cc.suffro.scannergenerator.data.TokenType
+import java.util.*
 
 class Lexer {
     private var currentState = State.START
@@ -81,13 +82,21 @@ class Lexer {
         APOSTROPHE,
         ASSIGN,
         CLOSING_BRACKET,
+        CLOSING_CURLY_BRACKET,
+        DECREMENT,
         IDENTIFIER,
         INT_LITERAL,
         BOOL_LITERAL,
         CHAR_LITERAL,
         OPENING_BRACKET,
+        OPENING_CURLY_BRACKET,
+        PLUS,
         SEMICOLON,
         START,
+        INCREMENT,
+        LESS_THAN,
+        MORE_THAN,
+        MINUS
     }
 
     private fun readStates(char: Char, tokens: MutableList<Token>) {
@@ -173,8 +182,38 @@ class Lexer {
                         currentToken.append(char)
                     }
 
+                    '{' -> {
+                        currentState = State.OPENING_CURLY_BRACKET
+                        currentToken.append(char)
+                    }
+
+                    '}' -> {
+                        currentState = State.CLOSING_CURLY_BRACKET
+                        currentToken.append(char)
+                    }
+
                     ';' -> {
                         currentState = State.SEMICOLON
+                        currentToken.append(char)
+                    }
+
+                    '<' -> {
+                        currentState = State.LESS_THAN
+                        currentToken.append(char)
+                    }
+
+                    '>' -> {
+                        currentState = State.MORE_THAN
+                        currentToken.append(char)
+                    }
+
+                    '+' -> {
+                        currentState = State.PLUS
+                        currentToken.append(char)
+                    }
+
+                    '-' -> {
+                        currentState = State.MINUS
                         currentToken.append(char)
                     }
 
@@ -192,15 +231,15 @@ class Lexer {
             }
 
             State.B -> {
-                checkAndChangeState(char, mapOf('o' to State.BO, 'r' to State.BR))
+                checkAndChangeState(char, mapOf('o' to State.BO, 'r' to State.BR), tokens)
             }
 
             State.BO -> {
-                checkAndChangeState(char, mapOf('o' to State.BOO))
+                checkAndChangeState(char, mapOf('o' to State.BOO), tokens)
             }
 
             State.BOO -> {
-                checkAndChangeState(char, mapOf('l' to State.BOOL))
+                checkAndChangeState(char, mapOf('l' to State.BOOL), tokens)
             }
 
             State.BOOL -> {
@@ -215,15 +254,15 @@ class Lexer {
             }
 
             State.BR -> {
-                checkAndChangeState(char, mapOf('e' to State.BRE))
+                checkAndChangeState(char, mapOf('e' to State.BRE), tokens)
             }
 
             State.BRE -> {
-                checkAndChangeState(char, mapOf('a' to State.BREA))
+                checkAndChangeState(char, mapOf('a' to State.BREA), tokens)
             }
 
             State.BREA -> {
-                checkAndChangeState(char, mapOf('k' to State.BREAK))
+                checkAndChangeState(char, mapOf('k' to State.BREAK), tokens)
             }
 
             State.BREAK -> {
@@ -238,15 +277,15 @@ class Lexer {
             }
 
             State.C -> {
-                checkAndChangeState(char, mapOf('h' to State.CH, 'o' to State.CO))
+                checkAndChangeState(char, mapOf('h' to State.CH, 'o' to State.CO), tokens)
             }
 
             State.CH -> {
-                checkAndChangeState(char, mapOf('a' to State.CHA))
+                checkAndChangeState(char, mapOf('a' to State.CHA), tokens)
             }
 
             State.CHA -> {
-                checkAndChangeState(char, mapOf('r' to State.CHAR))
+                checkAndChangeState(char, mapOf('r' to State.CHAR), tokens)
             }
 
             State.CHAR -> {
@@ -261,27 +300,27 @@ class Lexer {
             }
 
             State.CO -> {
-                checkAndChangeState(char, mapOf('n' to State.CON))
+                checkAndChangeState(char, mapOf('n' to State.CON), tokens)
             }
 
             State.CON -> {
-                checkAndChangeState(char, mapOf('t' to State.CONT))
+                checkAndChangeState(char, mapOf('t' to State.CONT), tokens)
             }
 
             State.CONT -> {
-                checkAndChangeState(char, mapOf('i' to State.CONTI))
+                checkAndChangeState(char, mapOf('i' to State.CONTI), tokens)
             }
 
             State.CONTI -> {
-                checkAndChangeState(char, mapOf('n' to State.CONTIN))
+                checkAndChangeState(char, mapOf('n' to State.CONTIN), tokens)
             }
 
             State.CONTIN -> {
-                checkAndChangeState(char, mapOf('u' to State.CONTINU))
+                checkAndChangeState(char, mapOf('u' to State.CONTINU), tokens)
             }
 
             State.CONTINU -> {
-                checkAndChangeState(char, mapOf('e' to State.CONTINUE))
+                checkAndChangeState(char, mapOf('e' to State.CONTINUE), tokens)
             }
 
             State.CONTINUE -> {
@@ -296,23 +335,28 @@ class Lexer {
             }
 
             State.D -> {
-                checkAndChangeState(char, mapOf('o' to State.DO))
+                checkAndChangeState(char, mapOf('o' to State.DO), tokens)
             }
 
             State.DO -> {
-                checkAndChangeState(char, mapOf('u' to State.DOU))
+                if (char.isWhitespace() || char == '{') {
+                    tokens.add(Token(TokenType.DO, currentToken.toString()))
+                    setStartState()
+                    readStates(char, tokens)
+                } else
+                    checkAndChangeState(char, mapOf('u' to State.DOU), tokens)
             }
 
             State.DOU -> {
-                checkAndChangeState(char, mapOf('b' to State.DOUB))
+                checkAndChangeState(char, mapOf('b' to State.DOUB), tokens)
             }
 
             State.DOUB -> {
-                checkAndChangeState(char, mapOf('l' to State.DOUBL))
+                checkAndChangeState(char, mapOf('l' to State.DOUBL), tokens)
             }
 
             State.DOUBL -> {
-                checkAndChangeState(char, mapOf('e' to State.DOUBLE))
+                checkAndChangeState(char, mapOf('e' to State.DOUBLE), tokens)
             }
 
             State.DOUBLE -> {
@@ -327,15 +371,15 @@ class Lexer {
             }
 
             State.E -> {
-                checkAndChangeState(char, mapOf('l' to State.EL))
+                checkAndChangeState(char, mapOf('l' to State.EL), tokens)
             }
 
             State.EL -> {
-                checkAndChangeState(char, mapOf('s' to State.ELS))
+                checkAndChangeState(char, mapOf('s' to State.ELS), tokens)
             }
 
             State.ELS -> {
-                checkAndChangeState(char, mapOf('e' to State.ELSE))
+                checkAndChangeState(char, mapOf('e' to State.ELSE), tokens)
             }
 
             State.ELSE -> {
@@ -350,31 +394,31 @@ class Lexer {
             }
 
             State.F -> {
-                checkAndChangeState(char, mapOf('a' to State.FA, 'l' to State.FL, 'o' to State.FO))
+                checkAndChangeState(char, mapOf('a' to State.FA, 'l' to State.FL, 'o' to State.FO), tokens)
             }
 
             State.FA -> {
-                checkAndChangeState(char, mapOf('l' to State.FAL))
+                checkAndChangeState(char, mapOf('l' to State.FAL), tokens)
             }
 
             State.FAL -> {
-                checkAndChangeState(char, mapOf('s' to State.FALS))
+                checkAndChangeState(char, mapOf('s' to State.FALS), tokens)
             }
 
             State.FALS -> {
-                checkAndChangeState(char, mapOf('e' to State.BOOL_LITERAL))
+                checkAndChangeState(char, mapOf('e' to State.BOOL_LITERAL), tokens)
             }
 
             State.FL -> {
-                checkAndChangeState(char, mapOf('o' to State.FLO))
+                checkAndChangeState(char, mapOf('o' to State.FLO), tokens)
             }
 
             State.FLO -> {
-                checkAndChangeState(char, mapOf('a' to State.FLOA))
+                checkAndChangeState(char, mapOf('a' to State.FLOA), tokens)
             }
 
             State.FLOA -> {
-                checkAndChangeState(char, mapOf('t' to State.FLOAT))
+                checkAndChangeState(char, mapOf('t' to State.FLOAT), tokens)
             }
 
             State.FLOAT -> {
@@ -389,7 +433,7 @@ class Lexer {
             }
 
             State.FO -> {
-                checkAndChangeState(char, mapOf('r' to State.FOR))
+                checkAndChangeState(char, mapOf('r' to State.FOR), tokens)
             }
 
             State.FOR -> {
@@ -404,7 +448,7 @@ class Lexer {
             }
 
             State.I -> {
-                checkAndChangeState(char, mapOf('f' to State.IF, 'n' to State.IN))
+                checkAndChangeState(char, mapOf('f' to State.IF, 'n' to State.IN), tokens)
             }
 
             State.IF -> {
@@ -419,7 +463,7 @@ class Lexer {
             }
 
             State.IN -> {
-                checkAndChangeState(char, mapOf('t' to State.INT))
+                checkAndChangeState(char, mapOf('t' to State.INT), tokens)
             }
 
             State.INT -> {
@@ -434,15 +478,15 @@ class Lexer {
             }
 
             State.L -> {
-                checkAndChangeState(char, mapOf('o' to State.LO))
+                checkAndChangeState(char, mapOf('o' to State.LO), tokens)
             }
 
             State.LO -> {
-                checkAndChangeState(char, mapOf('n' to State.LON))
+                checkAndChangeState(char, mapOf('n' to State.LON), tokens)
             }
 
             State.LON -> {
-                checkAndChangeState(char, mapOf('g' to State.LONG))
+                checkAndChangeState(char, mapOf('g' to State.LONG), tokens)
             }
 
             State.LONG -> {
@@ -457,23 +501,23 @@ class Lexer {
             }
 
             State.R -> {
-                checkAndChangeState(char, mapOf('e' to State.RE))
+                checkAndChangeState(char, mapOf('e' to State.RE), tokens)
             }
 
             State.RE -> {
-                checkAndChangeState(char, mapOf('t' to State.RET))
+                checkAndChangeState(char, mapOf('t' to State.RET), tokens)
             }
 
             State.RET -> {
-                checkAndChangeState(char, mapOf('u' to State.RETU))
+                checkAndChangeState(char, mapOf('u' to State.RETU), tokens)
             }
 
             State.RETU -> {
-                checkAndChangeState(char, mapOf('r' to State.RETUR))
+                checkAndChangeState(char, mapOf('r' to State.RETUR), tokens)
             }
 
             State.RETUR -> {
-                checkAndChangeState(char, mapOf('n' to State.RETURN))
+                checkAndChangeState(char, mapOf('n' to State.RETURN), tokens)
             }
 
             State.RETURN -> {
@@ -488,19 +532,19 @@ class Lexer {
             }
 
             State.S -> {
-                checkAndChangeState(char, mapOf('h' to State.SH))
+                checkAndChangeState(char, mapOf('h' to State.SH), tokens)
             }
 
             State.SH -> {
-                checkAndChangeState(char, mapOf('o' to State.SHO))
+                checkAndChangeState(char, mapOf('o' to State.SHO), tokens)
             }
 
             State.SHO -> {
-                checkAndChangeState(char, mapOf('r' to State.SHOR))
+                checkAndChangeState(char, mapOf('r' to State.SHOR), tokens)
             }
 
             State.SHOR -> {
-                checkAndChangeState(char, mapOf('t' to State.SHORT))
+                checkAndChangeState(char, mapOf('t' to State.SHORT), tokens)
             }
 
             State.SHORT -> {
@@ -515,27 +559,27 @@ class Lexer {
             }
 
             State.T -> {
-                checkAndChangeState(char, mapOf('r' to State.TR))
+                checkAndChangeState(char, mapOf('r' to State.TR), tokens)
             }
 
             State.TR -> {
-                checkAndChangeState(char, mapOf('u' to State.TRU))
+                checkAndChangeState(char, mapOf('u' to State.TRU), tokens)
             }
 
             State.TRU -> {
-                checkAndChangeState(char, mapOf('e' to State.BOOL_LITERAL))
+                checkAndChangeState(char, mapOf('e' to State.BOOL_LITERAL), tokens)
             }
 
             State.V -> {
-                checkAndChangeState(char, mapOf('o' to State.VO))
+                checkAndChangeState(char, mapOf('o' to State.VO), tokens)
             }
 
             State.VO -> {
-                checkAndChangeState(char, mapOf('i' to State.VOI))
+                checkAndChangeState(char, mapOf('i' to State.VOI), tokens)
             }
 
             State.VOI -> {
-                checkAndChangeState(char, mapOf('d' to State.VOID))
+                checkAndChangeState(char, mapOf('d' to State.VOID), tokens)
             }
 
             State.VOID -> {
@@ -550,19 +594,19 @@ class Lexer {
             }
 
             State.W -> {
-                checkAndChangeState(char, mapOf('h' to State.WH))
+                checkAndChangeState(char, mapOf('h' to State.WH), tokens)
             }
 
             State.WH -> {
-                checkAndChangeState(char, mapOf('i' to State.WHI))
+                checkAndChangeState(char, mapOf('i' to State.WHI), tokens)
             }
 
             State.WHI -> {
-                checkAndChangeState(char, mapOf('l' to State.WHIL))
+                checkAndChangeState(char, mapOf('l' to State.WHIL), tokens)
             }
 
             State.WHIL -> {
-                checkAndChangeState(char, mapOf('e' to State.WHILE))
+                checkAndChangeState(char, mapOf('e' to State.WHILE), tokens)
             }
 
             State.WHILE -> {
@@ -599,6 +643,51 @@ class Lexer {
                 readStates(char, tokens)
             }
 
+            State.OPENING_CURLY_BRACKET -> {
+                tokens.add(Token(TokenType.OPENING_CURLY_BRACKET, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
+            State.CLOSING_CURLY_BRACKET -> {
+                tokens.add(Token(TokenType.CLOSING_CURLY_BRACKET, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
+            State.INCREMENT -> {
+                tokens.add(Token(TokenType.INCREMENT, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
+            State.DECREMENT -> {
+                tokens.add(Token(TokenType.DECREMENT, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
+            State.PLUS -> {
+                checkAndChangeState(char, mapOf('+' to State.INCREMENT), tokens)
+            }
+
+            State.MINUS -> {
+                checkAndChangeState(char, mapOf('-' to State.DECREMENT), tokens)
+            }
+
+            State.LESS_THAN -> {
+                tokens.add(Token(TokenType.LESS_THAN, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+
+            }
+
+            State.MORE_THAN -> {
+                tokens.add(Token(TokenType.MORE_THAN, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
             State.SEMICOLON -> {
                 tokens.add(Token(TokenType.SEMICOLON, currentToken.toString()))
                 setStartState()
@@ -608,7 +697,6 @@ class Lexer {
             State.INT_LITERAL -> {
                 if (char.isDigit()) {
                     currentToken.append(char)
-                    currentState = State.IDENTIFIER
                 } else {
                     tokens.add(Token(TokenType.INT_LITERAL, currentToken.toString()))
                     setStartState()
@@ -649,11 +737,22 @@ class Lexer {
         }
     }
 
-    private fun checkAndChangeState(char: Char, states: Map<Char, State>) {
+    private fun checkAndChangeState(char: Char, states: Map<Char, State>, tokens: MutableList<Token>) {
         currentState = states[char] ?: State.IDENTIFIER
         if (currentState != State.IDENTIFIER || char in 'a'..'z' || char in 'A'..'Z') {
             currentToken.append(char)
+        } else {
+            val tokenType = tokenTypeByState(currentState)
+            tokens.add(Token(tokenType, currentToken.toString()))
+            setStartState()
+            readStates(char, tokens)
         }
+    }
+
+    private fun tokenTypeByState(state: State): TokenType {
+        return TokenType.values()
+            .find { it.name.uppercase(Locale.getDefault()) == state.name.uppercase(Locale.getDefault()) }
+            ?: throw IllegalArgumentException("Unknown state: $state")
     }
 
     private fun setStartState() {

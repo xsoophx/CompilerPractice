@@ -1,5 +1,7 @@
 package cc.suffro.scannergenerator
 
+import cc.suffro.scannergenerator.data.CharIfCondition
+import cc.suffro.scannergenerator.data.NonSplittableState
 import cc.suffro.scannergenerator.generators.STANDARD_INDENTATION
 import cc.suffro.scannergenerator.data.TokenType
 import kotlin.math.max
@@ -18,8 +20,8 @@ fun determineAndCreateClosingBrackets(
     codeLines: Sequence<String>,
     attachSingleLine: Boolean = true
 ): Sequence<String> {
-    val openingBracketCount = codeLines.count { it.contains("{") }
-    val closingBracketCount = codeLines.count { it.contains("}") }
+    val openingBracketCount = codeLines.sumOf { it.filterForAllQuotes().count { char -> char == '{' } }
+    val closingBracketCount = codeLines.sumOf { it.filterForAllQuotes().count { char -> char == '}' } }
     val bracketCountDifference = openingBracketCount - closingBracketCount
 
     val closingBrackets = sequence {
@@ -68,11 +70,25 @@ private fun isSingleBracket(trimmedLine: String): Boolean {
 }
 
 private fun calculateNewIndentation(trimmedLine: String, indentation: Int): Int {
-    val reducedLine = trimmedLine.filterForQuotes("\"").filterForQuotes("'")
+    val reducedLine = trimmedLine.filterForAllQuotes()
     return indentation + (reducedLine.count { "{([".contains(it) } - reducedLine.count { "}])".contains(it) }) * STANDARD_INDENTATION
 }
 
 private fun String.filterForQuotes(delimiter: String): String {
     return split(delimiter).filter { it.lastOrNull() != '\\' }.filterIndexed { index, _ -> index % 2 == 0 }
         .joinToString("")
+}
+
+private fun String.filterForAllQuotes(): String {
+    return filterForQuotes("\"").filterForQuotes("'")
+}
+
+val charIfConditions =
+    NonSplittableState.values()
+        .asSequence()
+        .filter { it.startStateProperties?.condition is CharIfCondition }
+        .toList()
+
+fun Char.isSingleCharKeyword(): Boolean {
+    return charIfConditions.any { it.startStateProperties?.condition as CharIfCondition == CharIfCondition(this) }
 }

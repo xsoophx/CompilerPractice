@@ -47,7 +47,7 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
                 }
             }
 
-        return readStates + statesWithSpecificFollowState
+        return (readStates + statesWithSpecificFollowState).determineAndCreateClosingBracketsExtension()
     }
 
     private fun createMapAssignment(followUpStates: List<Pair<TokenType, String>>): String {
@@ -59,7 +59,7 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
     private fun createStateWithMap(state: String, mapAssignment: String): Sequence<String> {
         return sequenceOf(
             "State.${state.uppercase(Locale.getDefault())} -> {",
-            "$CHECK_AND_CHANGE_FUNCTION_NAME(char, mapOf($mapAssignment))"
+            "$CHECK_AND_CHANGE_FUNCTION_NAME(char, mapOf($mapAssignment), tokens)"
         ).determineAndCreateClosingBracketsExtension()
     }
 
@@ -88,24 +88,34 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
     }
 
     private fun createSymbolStates(): Sequence<String> {
-        val symbols = TokenType.values().filter { it.clazz == TokenClass.SYMBOL }.map { it.name }
+        val symbols = TokenType.values().filter { it.clazz == TokenClass.SYMBOL }
 
         return symbols.asSequence().flatMap { symbol ->
-            sequenceOf(
-                "State.${symbol.uppercase(Locale.getDefault())} -> {",
-                "tokens.add(Token(TokenType.${symbol.uppercase(Locale.getDefault())}, currentToken.toString()))",
-                "setStartState()",
-                "readStates(char, tokens)"
-            ).determineAndCreateClosingBracketsExtension()
+            val nonSplittableState = NonSplittableState.byName(symbol.name)
+            val customMapping = nonSplittableState?.let { NonSplittableStateGenerator(it).getCustomMapping() }
+            if (customMapping != null) {
+                sequenceOf(
+                    "State.${symbol.name.uppercase(Locale.getDefault())} -> {",
+                    customMapping.joinToString("\n")
+                ).determineAndCreateClosingBracketsExtension()
+            } else {
+                sequenceOf(
+                    "State.${symbol.name.uppercase(Locale.getDefault())} -> {",
+                    "tokens.add(Token(TokenType.${symbol.name.uppercase(Locale.getDefault())}, currentToken.toString()))",
+                    "setStartState()",
+                    "readStates(char, tokens)"
+                ).determineAndCreateClosingBracketsExtension()
+            }
         }
     }
+
 
     private fun createLiteralStates(): Sequence<String> {
         val literals = TokenType.values().filter { it.clazz == TokenClass.LITERAL }.map { it.name }
         val nonSplittableStates = literals.mapNotNull { NonSplittableState.byName(it) }
 
         return nonSplittableStates.asSequence().flatMap { literal ->
-            NonSplittableStateGenerator(literal).generate()
+            NonSplittableStateGenerator(literal).generate().determineAndCreateClosingBracketsExtension()
         }
     }
 
@@ -158,7 +168,8 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
     }
 
     private fun createEndReadState(state: String): Sequence<String> {
-        return sequenceOf(
+        return if (state == "DO") createDoReadState()
+        else sequenceOf(
             "State.${state.uppercase(Locale.getDefault())} -> {",
             "if (char.isLetterOrDigit()) {",
             "currentToken.append(char)",
@@ -167,6 +178,18 @@ class StateMachineGenerator(private val states: List<Pair<TokenType, String>>) :
             "tokens.add(Token(TokenType.${state.uppercase(Locale.getDefault())}, currentToken.toString()))",
             "setStartState()",
             "readStates(char, tokens)"
+        ).determineAndCreateClosingBracketsExtension()
+    }
+
+    private fun createDoReadState(): Sequence<String> {
+        return sequenceOf(
+            "State.DO -> {",
+            "if (char.isWhitespace() || char == '{') {",
+            "tokens.add(Token(TokenType.DO, currentToken.toString()))",
+            "setStartState()",
+            "readStates(char, tokens)",
+            "} else {",
+            "checkAndChangeState(char, mapOf('u' to State.DOU), tokens)",
         ).determineAndCreateClosingBracketsExtension()
     }
 }

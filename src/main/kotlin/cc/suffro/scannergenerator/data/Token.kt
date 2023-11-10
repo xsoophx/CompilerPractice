@@ -1,5 +1,8 @@
 package cc.suffro.scannergenerator.data
 
+import cc.suffro.scannergenerator.Lexer
+import java.util.*
+
 data class Token(val type: TokenType, val value: String) {
     override fun toString(): String {
         return "Token Type: $type, Value: $value"
@@ -46,17 +49,28 @@ enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD, val omitCharInf
     VOID,
     WHILE,
 
+
     // symbols
     APOSTROPHE(TokenClass.SYMBOL),
     ASSIGN(TokenClass.SYMBOL),
     CLOSING_BRACKET(TokenClass.SYMBOL),
+    CLOSING_CURLY_BRACKET(TokenClass.SYMBOL),
+    DECREMENT(TokenClass.SYMBOL),
+    INCREMENT(TokenClass.SYMBOL),
+    MINUS(TokenClass.SYMBOL),
+    MORE_THAN(TokenClass.SYMBOL),
     OPENING_BRACKET(TokenClass.SYMBOL),
+    OPENING_CURLY_BRACKET(TokenClass.SYMBOL),
+    PLUS(TokenClass.SYMBOL),
+    LESS_THAN(TokenClass.SYMBOL),
     SEMICOLON(TokenClass.SYMBOL),
 
     IDENTIFIER(TokenClass.IDENTIFIER);
 
 
     companion object {
+
+
         val tokenTypeKeywords = values().asSequence().filter { it.clazz == TokenClass.KEYWORD }
 
         fun splitKeywordToStates(keyword: TokenType): List<Pair<TokenType, String>> {
@@ -66,37 +80,5 @@ enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD, val omitCharInf
                 .map { keyword to keyword.name.take(it) }
                 .toList()
         }
-
-        private fun splitKeywordToStatesWithTokenType(keyword: TokenType): List<SplitStateInformation> {
-            val maximalLength = keyword.omitCharInformation?.let { keyword.name.length - 1 } ?: keyword.name.length
-            return (1..maximalLength)
-                .asSequence()
-                .map { length ->
-                    if (length == keyword.name.length) {
-                        // TODO: write cleaner
-                        SplitStateInformation(
-                            splitState = keyword.name.take(length),
-                            originalType = keyword,
-                            isFinalState = true,
-                            followUpState = keyword.omitCharInformation?.nextTokenType
-                        )
-                    } else {
-                        SplitStateInformation(
-                            splitState = keyword.name.take(length),
-                            originalType = keyword,
-                            isFinalState = false,
-                            followUpState = keyword.omitCharInformation?.nextTokenType
-
-                        )
-                    }
-                }.toList()
-        }
     }
 }
-
-data class SplitStateInformation(
-    val splitState: String,
-    val originalType: TokenType,
-    val isFinalState: Boolean,
-    val followUpState: TokenType? = null,
-)

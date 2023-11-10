@@ -2,15 +2,15 @@ package cc.suffro.scannergenerator.generators
 
 import cc.suffro.scannergenerator.data.NonSplittableState
 import cc.suffro.scannergenerator.determineAndCreateClosingBracketsExtension
-import cc.suffro.scannergenerator.indent
 import java.util.*
-import kotlin.Exception
 
 class NonSplittableStateGenerator(private val literal: NonSplittableState) {
     fun generate(): Sequence<String> {
         val result = if (literal.hasCustomState) customMapping.getValue(literal) else generateDefaultState()
         return result.asSequence().determineAndCreateClosingBracketsExtension()
     }
+
+    fun getCustomMapping(): List<String>? = customMapping[literal]
 
     private val customMapping: Map<NonSplittableState, List<String>> = mapOf(
         NonSplittableState.CHAR_LITERAL to listOf(
@@ -29,6 +29,12 @@ class NonSplittableStateGenerator(private val literal: NonSplittableState) {
             addToken(),
             setStartState(),
             readStates()
+        ),
+        NonSplittableState.PLUS to listOf(
+            checkAndChangeState()
+        ),
+        NonSplittableState.MINUS to listOf(
+            checkAndChangeState()
         ),
     )
 
@@ -57,5 +63,8 @@ class NonSplittableStateGenerator(private val literal: NonSplittableState) {
     private fun readStates(): String = "readStates(char, tokens)"
     private fun throwException(exception: Exception): String =
         "throw ${exception.javaClass.simpleName}(\"${exception.message}\")"
+
+    private fun checkAndChangeState(): String =
+        "checkAndChangeState(char, mapOf('${literal.startStateProperties?.condition}' to State.${literal.name.uppercase(Locale.getDefault())}), tokens)"
 
 }

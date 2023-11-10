@@ -26,13 +26,7 @@ fun main() {
 }
 
 fun generateCode() {
-    val code = sequenceOf(
-        0 to "fun main() {",
-        4 to "println(\"Hello, World!\")",
-        4 to "State.values().forEach { println(it) }",
-        0 to "}\n",
-        0 to CodeGenerator().generate()
-    ).map { it.addIndentation() }.joinToString(separator = "\n")
+    val code = CodeGenerator().generate()
 
     val outputFile = File("generatedOutput/GeneratedCode.kt")
     FileWriter(outputFile).use { it.write(code) }
@@ -42,7 +36,7 @@ fun generateCode() {
 
 private fun createAndExecuteJar(pathName: String, child: String): Boolean {
     val outputDir = File(pathName)
-    outputDir.mkdir()
+    if (outputDir.mkdir()) logger.info { ">>> Directory $pathName created!" }
 
     val codeFile = File(outputDir, child)
 

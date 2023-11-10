@@ -13,8 +13,8 @@ class StateEnumClassGenerator(private val states: List<Pair<TokenType, String>>)
     }
 
     private fun generateEnumEntries(): List<String> {
-        val states = getKeywordStatesAsString() + NonSplittableState.values()
-            .map { it.name.uppercase(Locale.getDefault()) }.sorted()
+        val states = getKeywordStatesAsString() +
+                NonSplittableState.values().map { it.name.uppercase(Locale.getDefault()) }.sorted()
 
         return states.map { "$it," }
     }

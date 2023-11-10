@@ -1,9 +1,5 @@
 package cc.suffro.scannergenerator.data
 
-import cc.suffro.scannergenerator.determineAndCreateClosingBracketsExtension
-import cc.suffro.scannergenerator.generators.NonSplittableStateGenerator
-import java.util.*
-
 /*
     This class describes states, which are not splittable.
     This means, that the state is not split into multiple states (e.g. INT -> I, IN, INT), but is a single state.
@@ -39,13 +35,35 @@ enum class NonSplittableState(
         hasCustomState = true,
     ),
     CLOSING_BRACKET(StartStateProperties(CharIfCondition(')'))),
+    CLOSING_CURLY_BRACKET(StartStateProperties(CharIfCondition('}'))),
+    DECREMENT(
+        startStateProperties = null,
+        readStateCondition = null,
+        hasToBeLast = true
+    ),
     IDENTIFIER(
         StartStateProperties(StringIfCondition("in 'a'..'z', in 'A'..'Z'")),
         hasToBeLast = true,
         hasCustomState = true,
     ),
+    INCREMENT(
+        startStateProperties = null,
+        readStateCondition = null,
+        hasToBeLast = true
+    ),
     INT_LITERAL(StartStateProperties(StringIfCondition("in '0'..'9'")), StringIfCondition("char.isDigit()"), true),
+    MORE_THAN(StartStateProperties(CharIfCondition('>'))),
+    MINUS(
+        StartStateProperties(CharIfCondition('-')),
+        hasCustomState = true,
+    ),
+    LESS_THAN(StartStateProperties(CharIfCondition('<'))),
     OPENING_BRACKET(StartStateProperties(CharIfCondition('('))),
+    OPENING_CURLY_BRACKET(StartStateProperties(CharIfCondition('{'))),
+    PLUS(
+        startStateProperties = StartStateProperties(CharIfCondition('+')),
+        hasCustomState = true,
+    ),
     SEMICOLON(StartStateProperties(CharIfCondition(';'))),
     START(null);
 
