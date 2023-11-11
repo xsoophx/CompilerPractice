@@ -1,8 +1,5 @@
 package cc.suffro.scannergenerator.data
 
-import cc.suffro.scannergenerator.Lexer
-import java.util.*
-
 data class Token(val type: TokenType, val value: String) {
     override fun toString(): String {
         return "Token Type: $type, Value: $value"
@@ -55,12 +52,15 @@ enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD, val omitCharInf
     ASSIGN(TokenClass.SYMBOL),
     CLOSING_BRACKET(TokenClass.SYMBOL),
     CLOSING_CURLY_BRACKET(TokenClass.SYMBOL),
+    CLOSING_SQUARE_BRACKET(TokenClass.SYMBOL),
+    COMMA(TokenClass.SYMBOL),
     DECREMENT(TokenClass.SYMBOL),
     INCREMENT(TokenClass.SYMBOL),
     MINUS(TokenClass.SYMBOL),
     MORE_THAN(TokenClass.SYMBOL),
     OPENING_BRACKET(TokenClass.SYMBOL),
     OPENING_CURLY_BRACKET(TokenClass.SYMBOL),
+    OPENING_SQUARE_BRACKET(TokenClass.SYMBOL),
     PLUS(TokenClass.SYMBOL),
     LESS_THAN(TokenClass.SYMBOL),
     SEMICOLON(TokenClass.SYMBOL),
@@ -69,8 +69,6 @@ enum class TokenType(val clazz: TokenClass = TokenClass.KEYWORD, val omitCharInf
 
 
     companion object {
-
-
         val tokenTypeKeywords = values().asSequence().filter { it.clazz == TokenClass.KEYWORD }
 
         fun splitKeywordToStates(keyword: TokenType): List<Pair<TokenType, String>> {

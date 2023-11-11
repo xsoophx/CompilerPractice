@@ -37,6 +37,13 @@ class LexerTest {
         assertEquals(expected = tokenTypes, actual = tokens)
     }
 
+    @ParameterizedTest
+    @MethodSource("chainedAssignments")
+    fun `should detect correct chained assignments`(assignment: String, tokenTypes: List<Token>) {
+        val tokens = TokenList(Lexer().tokenize(assignment))
+        assertEquals(expected = tokenTypes, actual = tokens)
+    }
+
     companion object {
         private val tokenTypesOfA = listOf(
             Token(TokenType.INT, "int"),
@@ -181,5 +188,93 @@ class LexerTest {
             Arguments.of("while (a > b) { }", whileTokenTypes),
             Arguments.of("do { } while (a > b);", doWhileTokenTypes),
         )
+
+        private val chainedFunctions = TokenList(
+            listOf(
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "add"),
+                Token(TokenType.OPENING_BRACKET, "("),
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "a"),
+                Token(TokenType.COMMA, ","),
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "b"),
+                Token(TokenType.CLOSING_BRACKET, ")"),
+                Token(TokenType.OPENING_CURLY_BRACKET, "{"),
+                Token(TokenType.RETURN, "return"),
+                Token(TokenType.IDENTIFIER, "a"),
+                Token(TokenType.PLUS, "+"),
+                Token(TokenType.IDENTIFIER, "b"),
+                Token(TokenType.SEMICOLON, ";"),
+                Token(TokenType.CLOSING_CURLY_BRACKET, "}"),
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "main"),
+                Token(TokenType.OPENING_BRACKET, "("),
+                Token(TokenType.CLOSING_BRACKET, ")"),
+                Token(TokenType.OPENING_CURLY_BRACKET, "{"),
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "result"),
+                Token(TokenType.ASSIGN, "="),
+                Token(TokenType.IDENTIFIER, "add"),
+                Token(TokenType.OPENING_BRACKET, "("),
+                Token(TokenType.INT_LITERAL, "3"),
+                Token(TokenType.COMMA, ","),
+                Token(TokenType.INT_LITERAL, "4"),
+                Token(TokenType.CLOSING_BRACKET, ")"),
+                Token(TokenType.SEMICOLON, ";"),
+                Token(TokenType.RETURN, "return"),
+                Token(TokenType.INT_LITERAL, "0"),
+                Token(TokenType.SEMICOLON, ";"),
+                Token(TokenType.CLOSING_CURLY_BRACKET, "}"),
+            )
+        )
+
+        private val arrayAssignments = TokenList(
+            listOf(
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "numbers"),
+                Token(TokenType.OPENING_SQUARE_BRACKET, "["),
+                Token(TokenType.CLOSING_SQUARE_BRACKET, "]"),
+                Token(TokenType.ASSIGN, "="),
+                Token(TokenType.OPENING_CURLY_BRACKET, "{"),
+                Token(TokenType.INT_LITERAL, "1"),
+                Token(TokenType.COMMA, ","),
+                Token(TokenType.INT_LITERAL, "2"),
+                Token(TokenType.COMMA, ","),
+                Token(TokenType.INT_LITERAL, "3"),
+                Token(TokenType.COMMA, ","),
+                Token(TokenType.INT_LITERAL, "4"),
+                Token(TokenType.COMMA, ","),
+                Token(TokenType.INT_LITERAL, "5"),
+                Token(TokenType.CLOSING_CURLY_BRACKET, "}"),
+                Token(TokenType.SEMICOLON, ";"),
+                Token(TokenType.INT, "int"),
+                Token(TokenType.IDENTIFIER, "thirdNumber"),
+                Token(TokenType.ASSIGN, "="),
+                Token(TokenType.IDENTIFIER, "numbers"),
+                Token(TokenType.OPENING_SQUARE_BRACKET, "["),
+                Token(TokenType.INT_LITERAL, "2"),
+                Token(TokenType.CLOSING_SQUARE_BRACKET, "]"),
+                Token(TokenType.SEMICOLON, ";"),
+            )
+        )
+
+        @JvmStatic
+        fun chainedAssignments() = listOf(
+            Arguments.of(
+                "int add(int a, int b) {\nreturn a + b;\n}\nint main() {\nint result = add(3, 4);\nreturn 0;\n}",
+                chainedFunctions
+            ),
+            Arguments.of(
+                "int numbers[] = {1, 2, 3, 4, 5};\nint thirdNumber = numbers[2];",
+                arrayAssignments
+            )
+        )
+    }
+}
+
+data class TokenList(val tokens: List<Token>) : List<Token> by tokens {
+    override fun toString(): String {
+        return tokens.joinToString("\n")
     }
 }

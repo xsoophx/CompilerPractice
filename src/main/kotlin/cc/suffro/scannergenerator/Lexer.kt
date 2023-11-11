@@ -83,6 +83,7 @@ class Lexer {
         ASSIGN,
         CLOSING_BRACKET,
         CLOSING_CURLY_BRACKET,
+        CLOSING_SQUARE_BRACKET,
         DECREMENT,
         IDENTIFIER,
         INT_LITERAL,
@@ -90,13 +91,15 @@ class Lexer {
         CHAR_LITERAL,
         OPENING_BRACKET,
         OPENING_CURLY_BRACKET,
+        OPENING_SQUARE_BRACKET,
         PLUS,
         SEMICOLON,
         START,
         INCREMENT,
         LESS_THAN,
         MORE_THAN,
-        MINUS
+        MINUS,
+        COMMA,
     }
 
     private fun readStates(char: Char, tokens: MutableList<Token>) {
@@ -192,6 +195,16 @@ class Lexer {
                         currentToken.append(char)
                     }
 
+                    '[' -> {
+                        currentState = State.OPENING_SQUARE_BRACKET
+                        currentToken.append(char)
+                    }
+
+                    ']' -> {
+                        currentState = State.CLOSING_SQUARE_BRACKET
+                        currentToken.append(char)
+                    }
+
                     ';' -> {
                         currentState = State.SEMICOLON
                         currentToken.append(char)
@@ -214,6 +227,11 @@ class Lexer {
 
                     '-' -> {
                         currentState = State.MINUS
+                        currentToken.append(char)
+                    }
+
+                    ',' -> {
+                        currentState = State.COMMA
                         currentToken.append(char)
                     }
 
@@ -655,6 +673,18 @@ class Lexer {
                 readStates(char, tokens)
             }
 
+            State.OPENING_SQUARE_BRACKET -> {
+                tokens.add(Token(TokenType.OPENING_SQUARE_BRACKET, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
+            State.CLOSING_SQUARE_BRACKET -> {
+                tokens.add(Token(TokenType.CLOSING_SQUARE_BRACKET, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
+            }
+
             State.INCREMENT -> {
                 tokens.add(Token(TokenType.INCREMENT, currentToken.toString()))
                 setStartState()
@@ -673,6 +703,12 @@ class Lexer {
 
             State.MINUS -> {
                 checkAndChangeState(char, mapOf('-' to State.DECREMENT), tokens)
+            }
+
+            State.COMMA -> {
+                tokens.add(Token(TokenType.COMMA, currentToken.toString()))
+                setStartState()
+                readStates(char, tokens)
             }
 
             State.LESS_THAN -> {
@@ -725,7 +761,11 @@ class Lexer {
             }
 
             State.IDENTIFIER -> {
-                if (char.isLetterOrDigit()) {
+                if (!char.isLetterOrDigit() && !char.isWhitespace()) {
+                    tokens.add(Token(TokenType.IDENTIFIER, currentToken.toString()))
+                    setStartState()
+                    readStates(char, tokens)
+                } else if (char.isLetterOrDigit()) {
                     currentToken.append(char)
                 } else {
                     tokens.add(Token(TokenType.IDENTIFIER, currentToken.toString()))
@@ -738,6 +778,13 @@ class Lexer {
     }
 
     private fun checkAndChangeState(char: Char, states: Map<Char, State>, tokens: MutableList<Token>) {
+        if (char.isWhitespace()) {
+            tokens.add(Token(tokenTypeByState(currentState), currentToken.toString()))
+            setStartState()
+            readStates(char, tokens)
+            return
+        }
+
         currentState = states[char] ?: State.IDENTIFIER
         if (currentState != State.IDENTIFIER || char in 'a'..'z' || char in 'A'..'Z') {
             currentToken.append(char)
